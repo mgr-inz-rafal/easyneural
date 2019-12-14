@@ -32,12 +32,14 @@ impl NeuronBuilder {
     }
 
     pub fn build(&self) -> Neuron {
-        use rand::Rng;
+        use rand_distr::{Distribution, Normal};
         let mut n = Neuron::new();
         n.inputs.resize(self.neuron_count, 0.0);
         if self.randomize_inputs {
-            let mut rng = rand::thread_rng();
-            n.inputs.iter_mut().for_each(|v| *v = rng.gen::<f64>());
+            let normal = Normal::new(0.0, 1.0).unwrap();
+            n.inputs
+                .iter_mut()
+                .for_each(|v| *v = normal.sample(&mut rand::thread_rng()));
         }
         n
     }
