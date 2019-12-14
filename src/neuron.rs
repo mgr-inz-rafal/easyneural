@@ -35,6 +35,8 @@ impl NeuronBuilder {
         use rand_distr::{Distribution, Normal};
         let mut n = Neuron::new();
         n.inputs.resize(self.neuron_count, 0.0);
+
+        // TODO: Allow for different initialization methods (Xavier, He, etc.)
         if self.randomize_inputs {
             let normal = Normal::new(0.0, 1.0).unwrap();
             n.inputs
