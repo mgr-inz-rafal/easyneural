@@ -17,8 +17,8 @@ fn build_single_layer() {
     assert_eq!(3, l.neurons().len());
 
     let mut i = l.neurons().iter();
-    assert_eq!(i.next().unwrap().inputs.len(), 1);
-    assert_eq!(i.next().unwrap().inputs.len(), 2);
-    assert_eq!(i.next().unwrap().inputs.len(), 3);
+    assert_eq!(i.next().unwrap().inputs().len(), 1);
+    assert_eq!(i.next().unwrap().inputs().len(), 2);
+    assert_eq!(i.next().unwrap().inputs().len(), 3);
     assert!(i.next().is_none());
 }

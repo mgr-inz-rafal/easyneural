@@ -1,10 +1,14 @@
 pub struct Neuron {
-    pub inputs: Vec<f64>,
+    inputs: Vec<f64>,
 }
 
 impl Neuron {
     fn new() -> Neuron {
         Neuron { inputs: Vec::new() }
+    }
+
+    pub fn inputs(&self) -> &Vec<f64> {
+        &self.inputs
     }
 }
 
