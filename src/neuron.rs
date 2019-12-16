@@ -1,15 +1,23 @@
-pub struct Neuron {
-    inputs: Vec<f64>,
+use super::axon::*;
+
+pub struct Neuron<'a> {
+    inputs: Vec<&'a Axon>,
+    old_inputs: Vec<f64>,
 }
 
-impl Neuron {
-    fn new() -> Neuron {
-        Neuron { inputs: Vec::new() }
+impl<'a> Neuron<'a> {
+    fn new() -> Neuron<'a> {
+        Neuron {
+            old_inputs: Vec::new(),
+            inputs: Vec::new(),
+        }
     }
 
     pub fn inputs(&self) -> &Vec<f64> {
-        &self.inputs
+        &self.old_inputs
     }
+
+    pub fn add_axon(&mut self) {}
 }
 
 pub struct NeuronBuilder {
@@ -36,27 +44,37 @@ impl NeuronBuilder {
     }
 
     pub fn build(&self) -> Neuron {
+        let mut neuron = Neuron::new();
+        for _ in 0..self.neuron_count {
+            neuron.add_axon();
+        }
+
+        neuron
+        /*
         use rand_distr::{Distribution, Normal};
         let mut n = Neuron::new();
-        n.inputs.resize(self.neuron_count, 0.0);
+        n.old_inputs.resize(self.neuron_count, 0.0);
 
         // TODO: Allow for different initialization methods (Xavier, He, etc.)
         if self.randomize_inputs {
             let normal = Normal::new(0.0, 1.0).unwrap();
-            n.inputs
+            n.old_inputs
                 .iter_mut()
                 .for_each(|v| *v = normal.sample(&mut rand::thread_rng()));
         }
         n
+        */
     }
 }
 
+/*
 #[cfg(test)]
 mod tests {
     use crate::neuron::*;
     #[test]
     fn create_neuron_with_inputs() {
         let n = NeuronBuilder::new().with_inputs(5).build();
-        assert_eq!(5, n.inputs.len());
+        assert_eq!(5, n.inputs().len());
     }
 }
+*/

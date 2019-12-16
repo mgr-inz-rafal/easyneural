@@ -1,7 +1,7 @@
 use super::neuron::Neuron;
 
 pub struct Layer<'a> {
-    neurons: Vec<&'a Neuron>,
+    neurons: Vec<&'a Neuron<'a>>,
 }
 
 impl<'a> Layer<'a> {

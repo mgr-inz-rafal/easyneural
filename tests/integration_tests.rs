@@ -4,6 +4,7 @@ use easyneural::layer::Layer;
 use easyneural::network::Network;
 use easyneural::neuron::NeuronBuilder;
 
+/*
 #[test]
 fn build_single_layer() {
     let n1 = NeuronBuilder::new().with_inputs(1).build();
@@ -42,3 +43,4 @@ fn build_network_with_two_layers() {
 
     assert_eq!(n.layers().len(), 2);
 }
+*/
