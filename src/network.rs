@@ -1,25 +1,20 @@
 use super::axon::Axon;
 use super::layer::Layer;
+use super::neuron::Neuron;
 
-pub struct Network<'a> {
-    layers: Vec<Layer<'a>>,
+pub struct Network {
+    neurons: Vec<Neuron>,
+    layers: Vec<Layer>,
     axons: Vec<Axon>,
 }
 
-impl<'a> Network<'a> {
-    pub fn new() -> Network<'a> {
+impl Network {
+    pub fn new() -> Network {
         Network {
+            neurons: Vec::new(),
             layers: Vec::new(),
             axons: Vec::new(),
         }
-    }
-
-    pub fn add_layer(&mut self, layer: Layer<'a>) {
-        self.layers.push(layer);
-    }
-
-    pub fn layers(&self) -> &Vec<Layer<'a>> {
-        &self.layers
     }
 }
 
@@ -51,6 +46,11 @@ impl NetworkBuilder {
         );
 
         let network = Network::new();
+        for i in 0..self.neurons_in_layers.len() - 1 {
+            // Create neurons for current layer
+            let l = Layer::new();
+            for j in 0..self.neurons_in_layers[i] {}
+        }
 
         network
     }

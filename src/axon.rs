@@ -1,3 +1,3 @@
-pub struct Axon {
+pub(crate) struct Axon {
     value: f64,
 }
