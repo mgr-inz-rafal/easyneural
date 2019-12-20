@@ -3,7 +3,6 @@ use super::layer::Layer;
 use super::neuron::Neuron;
 
 pub struct Network {
-    neurons: Vec<Neuron>,
     layers: Vec<Layer>,
     axons: Vec<Axon>,
 }
@@ -11,7 +10,6 @@ pub struct Network {
 impl Network {
     pub fn new() -> Network {
         Network {
-            neurons: Vec::new(),
             layers: Vec::new(),
             axons: Vec::new(),
         }
@@ -46,10 +44,20 @@ impl NetworkBuilder {
         );
 
         let network = Network::new();
-        for i in 0..self.neurons_in_layers.len() - 1 {
+        let mut index = 1;
+        loop {
             // Create neurons for current layer
-            let l = Layer::new();
-            for j in 0..self.neurons_in_layers[i] {}
+            let mut l = Layer::new();
+            for j in 0..self.neurons_in_layers[index] {
+                l.add_neuron(Neuron::new());
+            }
+
+            // Create neurons for next layer
+            index += 1;
+            let mut l = Layer::new();
+            for j in 0..self.neurons_in_layers[index] {
+                l.add_neuron(Neuron::new());
+            }
         }
 
         network
