@@ -1,12 +1,12 @@
 use super::axon::Axon;
 
-pub struct Neuron {
-    inputs: Vec<Axon>,
+pub(crate) struct Neuron<'a> {
+    pub(crate) inputs: Vec<Axon<'a>>,
     output: Option<f64>,
 }
 
-impl Neuron {
-    pub fn new() -> Neuron {
+impl<'a> Neuron<'a> {
+    pub fn new() -> Neuron<'a> {
         Neuron {
             inputs: Vec::new(),
             output: None,

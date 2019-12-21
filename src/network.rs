@@ -2,13 +2,13 @@ use super::axon::Axon;
 use super::layer::Layer;
 use super::neuron::Neuron;
 
-pub struct Network {
-    layers: Vec<Layer>,
-    axons: Vec<Axon>,
+pub struct Network<'a> {
+    layers: Vec<Layer<'a>>,
+    axons: Vec<Axon<'a>>,
 }
 
-impl Network {
-    pub fn new() -> Network {
+impl<'a> Network<'a> {
+    pub fn new() -> Network<'a> {
         Network {
             layers: Vec::new(),
             axons: Vec::new(),
@@ -53,10 +53,17 @@ impl NetworkBuilder {
             }
 
             // Create neurons for next layer
-            index += 1;
-            let mut l = Layer::new();
-            for j in 0..self.neurons_in_layers[index] {
-                l.add_neuron(Neuron::new());
+            let mut ln = Layer::new();
+            for j in 0..self.neurons_in_layers[index + 1] {
+                let mut n = Neuron::new();
+
+                // Create axons to each neuron of the previous layer
+                for nn in &l.neurons {
+                    let a = Axon::new(nn);
+                    n.inputs.push(a); // TODO: Replace with NeuronBuilder
+                }
+
+                ln.add_neuron(n);
             }
         }
 

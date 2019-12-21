@@ -1,17 +1,17 @@
 use super::neuron::Neuron;
 
-pub(crate) struct Layer {
-    neurons: Vec<Neuron>,
+pub(crate) struct Layer<'a> {
+    pub(crate) neurons: Vec<Neuron<'a>>,
 }
 
-impl Layer {
-    pub(crate) fn new() -> Layer {
+impl<'a> Layer<'a> {
+    pub(crate) fn new() -> Layer<'a> {
         Layer {
             neurons: Vec::new(),
         }
     }
 
-    pub(crate) fn add_neuron(&mut self, neuron: Neuron) {
+    pub(crate) fn add_neuron(&mut self, neuron: Neuron<'a>) {
         self.neurons.push(neuron);
     }
 }
