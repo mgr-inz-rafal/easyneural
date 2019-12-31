@@ -1,17 +1,14 @@
 use super::neuron::Neuron;
+use id_arena::{Arena, Id};
 
-pub(crate) struct Layer<'a> {
-    pub(crate) neurons: Vec<Neuron<'a>>,
+pub(crate) struct Layer {
+    pub(crate) neurons: Vec<Id<Neuron>>,
 }
 
-impl<'a> Layer<'a> {
-    pub(crate) fn new() -> Layer<'a> {
+impl Layer {
+    pub(crate) fn new() -> Layer {
         Layer {
             neurons: Vec::new(),
         }
-    }
-
-    pub(crate) fn add_neuron(&mut self, neuron: Neuron<'a>) {
-        self.neurons.push(neuron);
     }
 }
