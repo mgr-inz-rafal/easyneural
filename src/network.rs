@@ -33,6 +33,27 @@ impl NetworkBuilder {
         self
     }
 
+    fn create_layer(&self, network: &mut Network, i: usize) -> Layer {
+        let mut new_layer = Layer::new();
+        for _ in 0..self.neurons_in_layers[i] {
+            let new_neuron = network.neurons.alloc(Neuron::new());
+            if i > 0 {
+                let last_layer = network.layers.last();
+                if let Some(last_layer) = last_layer {
+                    for previous_neuron_id in &last_layer.neurons {
+                        network.neurons[new_neuron]
+                            .inputs
+                            .push(Axon::new(*previous_neuron_id));
+                    }
+                } else {
+                    panic!("Missing previous network layer");
+                }
+            }
+            new_layer.neurons.push(new_neuron);
+        }
+        new_layer
+    }
+
     pub fn build(&self) -> Network {
         assert!(
             self.neurons_in_layers.len() > 1,
@@ -49,23 +70,7 @@ impl NetworkBuilder {
             .iter()
             .enumerate()
             .for_each(|(i, _)| {
-                let mut new_layer = Layer::new();
-                for _ in 0..self.neurons_in_layers[i] {
-                    let new_neuron = network.neurons.alloc(Neuron::new());
-                    if i > 0 {
-                        let last_layer = network.layers.last();
-                        if let Some(last_layer) = last_layer {
-                            for previous_neuron_id in &last_layer.neurons {
-                                network.neurons[new_neuron]
-                                    .inputs
-                                    .push(Axon::new(*previous_neuron_id));
-                            }
-                        } else {
-                            panic!("Missing previous network layer");
-                        }
-                    }
-                    new_layer.neurons.push(new_neuron);
-                }
+                let new_layer = self.create_layer(&mut network, i);
                 network.layers.push(new_layer);
             });
         network
