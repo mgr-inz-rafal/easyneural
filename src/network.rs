@@ -92,5 +92,25 @@ mod tests {
         assert_eq!(layer_iterator.next().unwrap().neurons.len(), 2);
         assert_eq!(layer_iterator.next().unwrap().neurons.len(), 2);
         assert_eq!(layer_iterator.next().unwrap().neurons.len(), 1);
+
+        // Validate proper connections between neurons
+        nb.layers.iter().enumerate().for_each(|(i, _)| {
+            if i == 0 {
+                // Neurons on the first layer should have no input
+                for neuron_id in &nb.layers[i].neurons {
+                    assert!(nb.neurons[*neuron_id].inputs.is_empty());
+                }
+            } else {
+                // Validate that each neuron on the current layer
+                // have exactly one axon per neuron in previous layer
+                let neuron_count_on_previous_layer = nb.layers[i - 1].neurons.len();
+                for neuron_id in &nb.layers[i].neurons {
+                    assert_eq!(
+                        nb.neurons[*neuron_id].inputs.len(),
+                        neuron_count_on_previous_layer
+                    );
+                }
+            }
+        });
     }
 }
