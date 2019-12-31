@@ -41,8 +41,7 @@ impl NetworkBuilder {
     ) {
         if let Some(last_layer) = layer {
             last_layer.neurons.iter().for_each(|n| {
-                let a = Axon::new(*n);
-                neurons[*new_neuron].inputs.push(a);
+                neurons[*new_neuron].inputs.push(Axon::new(*n));
             })
         } else {
             panic!("Trying to connect a neuron to the non-existing layer");
