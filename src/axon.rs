@@ -1,12 +1,12 @@
 use super::neuron::Neuron;
+use id_arena::{Arena, Id};
 
-pub(crate) struct Axon<'a> {
-    value: f64,
-    left: &'a Neuron<'a>,
+pub(crate) struct Axon {
+    pub(crate) left: Id<Neuron>,
 }
 
-impl<'a> Axon<'a> {
-    pub(crate) fn new(left: &'a Neuron<'a>) -> Axon<'a> {
-        Axon { value: 0.0, left }
+impl Axon {
+    pub(crate) fn new(left: Id<Neuron>) -> Axon {
+        Axon { left }
     }
 }
