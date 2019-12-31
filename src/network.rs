@@ -49,17 +49,10 @@ impl NetworkBuilder {
             let mut new_layer = Layer::new();
             for _ in 0..self.neurons_in_layers[layer_index] {
                 let new_neuron = network.neurons.alloc(Neuron::new());
-                println!("Creating neuron in layer {}", layer_index);
-
                 if layer_index > 0 {
                     let last_layer = network.layers.last();
                     if let Some(last_layer) = last_layer {
                         for previous_neuron_id in &last_layer.neurons {
-                            println!(
-                                "\tCreating axon between layer {} and {}",
-                                layer_index,
-                                layer_index - 1
-                            );
                             network.neurons[new_neuron]
                                 .inputs
                                 .push(Axon::new(*previous_neuron_id));
