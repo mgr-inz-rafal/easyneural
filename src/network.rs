@@ -57,6 +57,8 @@ impl NetworkBuilder {
                                 .inputs
                                 .push(Axon::new(*previous_neuron_id));
                         }
+                    } else {
+                        panic!("Missing previous network layer");
                     }
                 }
                 new_layer.neurons.push(new_neuron);
