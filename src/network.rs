@@ -82,6 +82,15 @@ mod tests {
         let nb = NetworkBuilder::new()
             .with_neurons_in_layers(vec![3, 2, 2, 1])
             .build();
+
+        // Check number of layers
         assert_eq!(nb.layers.len(), 4);
+
+        // Check number of neurons per layer
+        let mut layer_iterator = nb.layers.iter();
+        assert_eq!(layer_iterator.next().unwrap().neurons.len(), 3);
+        assert_eq!(layer_iterator.next().unwrap().neurons.len(), 2);
+        assert_eq!(layer_iterator.next().unwrap().neurons.len(), 2);
+        assert_eq!(layer_iterator.next().unwrap().neurons.len(), 1);
     }
 }
