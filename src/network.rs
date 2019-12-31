@@ -33,21 +33,25 @@ impl NetworkBuilder {
         self
     }
 
-    fn create_layer(&self, network: &mut Network, i: usize) -> Layer {
+    fn connect_neuron_to_previous_layer(&self, network: &mut Network, new_neuron: &Id<Neuron>) {
+        let last_layer = network.layers.last();
+        if let Some(last_layer) = last_layer {
+            for previous_neuron_id in &last_layer.neurons {
+                network.neurons[*new_neuron]
+                    .inputs
+                    .push(Axon::new(*previous_neuron_id));
+            }
+        } else {
+            panic!("Missing previous network layer");
+        }
+    }
+
+    fn create_layer(&self, mut network: &mut Network, i: usize) -> Layer {
         let mut new_layer = Layer::new();
         for _ in 0..self.neurons_in_layers[i] {
             let new_neuron = network.neurons.alloc(Neuron::new());
             if i > 0 {
-                let last_layer = network.layers.last();
-                if let Some(last_layer) = last_layer {
-                    for previous_neuron_id in &last_layer.neurons {
-                        network.neurons[new_neuron]
-                            .inputs
-                            .push(Axon::new(*previous_neuron_id));
-                    }
-                } else {
-                    panic!("Missing previous network layer");
-                }
+                self.connect_neuron_to_previous_layer(&mut network, &new_neuron);
             }
             new_layer.neurons.push(new_neuron);
         }
