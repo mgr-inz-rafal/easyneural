@@ -33,6 +33,38 @@ impl NetworkBuilder {
         self
     }
 
+    fn connect_neuron_to_layer(
+        &self,
+        new_neuron: &Id<Neuron>,
+        layer: Option<&Layer>,
+        neurons: &mut Arena<Neuron>,
+    ) {
+        if let Some(last_layer) = layer {
+            last_layer.neurons.iter().for_each(|n| {
+                let a = Axon::new(*n);
+                neurons[*new_neuron].inputs.push(a);
+            })
+        } else {
+            panic!("Trying to connect a neuron to the non-existing layer");
+        }
+    }
+
+    fn create_layer(&self, network: &mut Network, i: usize) -> Layer {
+        let mut new_layer = Layer::new();
+        (0..self.neurons_in_layers[i]).for_each(|_| {
+            let new_neuron = network.neurons.alloc(Neuron::new());
+            if i > 0 {
+                self.connect_neuron_to_layer(
+                    &new_neuron,
+                    network.layers.last(),
+                    &mut network.neurons,
+                );
+            }
+            new_layer.neurons.push(new_neuron);
+        });
+        new_layer
+    }
+
     pub fn build(&self) -> Network {
         assert!(
             self.neurons_in_layers.len() > 1,
@@ -45,31 +77,13 @@ impl NetworkBuilder {
         );
 
         let mut network = Network::new();
-        for layer_index in 0..self.neurons_in_layers.len() {
-            let mut new_layer = Layer::new();
-            for _ in 0..self.neurons_in_layers[layer_index] {
-                let new_neuron = network.neurons.alloc(Neuron::new());
-                println!("Creating neuron in layer {}", layer_index);
-
-                if layer_index > 0 {
-                    let last_layer = network.layers.last();
-                    if let Some(last_layer) = last_layer {
-                        for previous_neuron_id in &last_layer.neurons {
-                            println!(
-                                "\tCreating axon between layer {} and {}",
-                                layer_index,
-                                layer_index - 1
-                            );
-                            network.neurons[new_neuron]
-                                .inputs
-                                .push(Axon::new(*previous_neuron_id));
-                        }
-                    }
-                }
-                new_layer.neurons.push(new_neuron);
-            }
-            network.layers.push(new_layer);
-        }
+        self.neurons_in_layers
+            .iter()
+            .enumerate()
+            .for_each(|(i, _)| {
+                let new_layer = self.create_layer(&mut network, i);
+                network.layers.push(new_layer);
+            });
         network
     }
 }
