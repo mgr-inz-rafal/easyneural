@@ -1,8 +1,10 @@
 extern crate easyneural;
 
+/*
 use easyneural::layer::Layer;
 use easyneural::network::Network;
 use easyneural::neuron::NeuronBuilder;
+*/
 
 /*
 #[test]

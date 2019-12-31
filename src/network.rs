@@ -32,7 +32,7 @@ impl NetworkBuilder {
         self
     }
 
-    pub fn build(&mut self) -> Network {
+    pub fn build(&self) -> Network {
         assert!(
             self.neurons_in_layers.len() > 1,
             "Network must have at least 2 layers"
@@ -43,28 +43,51 @@ impl NetworkBuilder {
             "Last layer must consist of a single neuron"
         );
 
-        let network = Network::new();
-        let mut index = 1;
-        loop {
+        let mut network = Network::new();
+        for index in 0..self.neurons_in_layers.len() {
             // Create neurons for current layer
-            let mut l = Layer::new();
-            for j in 0..self.neurons_in_layers[index] {
-                l.add_neuron(Neuron::new());
-            }
+            let mut layer = Layer::new();
+            for _ in 0..self.neurons_in_layers[index] {
+                let mut new_neuron = Neuron::new();
+                println!("Creating neuron on layer {}...", index);
 
-            // Create neurons for next layer
-            let mut ln = Layer::new();
-            for j in 0..self.neurons_in_layers[index + 1] {
-                let mut n = Neuron::new();
+                if index > 0 {
+                    // Create axons connecting neurons on the current layer to
+                    // all neurons on the previous layer
+                    {
+                        let previous_layer = &network.layers;
+                        let previous_layer = previous_layer.last();
+                        let previous_layer = previous_layer.as_ref().unwrap();
 
-                // Create axons to each neuron of the previous layer
-                for nn in &l.neurons {
-                    let a = Axon::new(nn);
-                    n.inputs.push(a); // TODO: Replace with NeuronBuilder
+                        for n in &previous_layer.neurons {
+                            let a = Axon::new(n);
+                            new_neuron.inputs.push(a);
+                        }
+                    }
                 }
-
-                ln.add_neuron(n);
+                layer.add_neuron(new_neuron);
             }
+            network.layers.push(layer);
+
+            // // Create neurons for next layer
+            // let mut ln = Layer::new();
+            // for j in 0..self.neurons_in_layers[index + 1] {
+            //     let mut n = Neuron::new();
+            //     println!("Creating neuron on layer {}...", index + 1);
+
+            //     // Create axons to each neuron of the previous layer
+            //     for nn in &l.neurons {
+            //         let a = Axon::new(nn);
+            //         println!(
+            //             "Creating axon from layer {} to layer {}...",
+            //             index + 1,
+            //             index
+            //         );
+            //         n.inputs.push(a); // TODO: Replace with NeuronBuilder
+            //     }
+
+            //     ln.add_neuron(n);
+            //            }
         }
 
         network
@@ -77,7 +100,7 @@ mod tests {
     #[test]
     fn build_network() {
         let nb = NetworkBuilder::new()
-            .with_neurons_in_layers(vec![3, 3, 1])
+            .with_neurons_in_layers(vec![3, 2, 2, 1])
             .build();
         assert_eq!(2, 2);
     }
