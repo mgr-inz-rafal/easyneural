@@ -33,25 +33,32 @@ impl NetworkBuilder {
         self
     }
 
-    fn connect_neuron_to_previous_layer(&self, network: &mut Network, new_neuron: &Id<Neuron>) {
-        let last_layer = network.layers.last();
-        if let Some(last_layer) = last_layer {
-            for previous_neuron_id in &last_layer.neurons {
-                network.neurons[*new_neuron]
-                    .inputs
-                    .push(Axon::new(*previous_neuron_id));
-            }
+    fn connect_neuron_to_layer(
+        &self,
+        new_neuron: &Id<Neuron>,
+        layer: Option<&Layer>,
+        neurons: &mut Arena<Neuron>,
+    ) {
+        if let Some(last_layer) = layer {
+            last_layer.neurons.iter().for_each(|n| {
+                let a = Axon::new(*n);
+                neurons[*new_neuron].inputs.push(a);
+            })
         } else {
-            panic!("Missing previous network layer");
+            panic!("Trying to connect a neuron to the non-existing layer");
         }
     }
 
-    fn create_layer(&self, mut network: &mut Network, i: usize) -> Layer {
+    fn create_layer(&self, network: &mut Network, i: usize) -> Layer {
         let mut new_layer = Layer::new();
         (0..self.neurons_in_layers[i]).for_each(|_| {
             let new_neuron = network.neurons.alloc(Neuron::new());
             if i > 0 {
-                self.connect_neuron_to_previous_layer(&mut network, &new_neuron);
+                self.connect_neuron_to_layer(
+                    &new_neuron,
+                    network.layers.last(),
+                    &mut network.neurons,
+                );
             }
             new_layer.neurons.push(new_neuron);
         });
