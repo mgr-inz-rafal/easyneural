@@ -110,9 +110,12 @@ mod tests {
                         neuron_count_on_previous_layer
                     );
 
-                    // Validate that each axon really points
-                    // to the neuron on previous layer
+                    // Validate that:
+                    // - each axon really points to the neuron on previous layer
+                    // - each axon points to different neuron
+                    let mut processed_neurons = Vec::new();
                     for axon in &nb.neurons[*neuron_id].inputs {
+                        assert!(!processed_neurons.contains(&axon.left));
                         assert_eq!(
                             nb.layers[i - 1]
                                 .neurons
@@ -121,6 +124,7 @@ mod tests {
                                 .count(),
                             1
                         );
+                        processed_neurons.push(axon.left);
                     }
                 }
             }
