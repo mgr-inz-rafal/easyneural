@@ -1,5 +1,5 @@
 use super::neuron::Neuron;
-use id_arena::{Arena, Id};
+use id_arena::Id;
 
 pub(crate) struct Layer {
     pub(crate) neurons: Vec<Id<Neuron>>,
