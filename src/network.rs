@@ -48,13 +48,13 @@ impl NetworkBuilder {
 
     fn create_layer(&self, mut network: &mut Network, i: usize) -> Layer {
         let mut new_layer = Layer::new();
-        for _ in 0..self.neurons_in_layers[i] {
+        (0..self.neurons_in_layers[i]).for_each(|_| {
             let new_neuron = network.neurons.alloc(Neuron::new());
             if i > 0 {
                 self.connect_neuron_to_previous_layer(&mut network, &new_neuron);
             }
             new_layer.neurons.push(new_neuron);
-        }
+        });
         new_layer
     }
 
