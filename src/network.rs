@@ -109,6 +109,19 @@ mod tests {
                         nb.neurons[*neuron_id].inputs.len(),
                         neuron_count_on_previous_layer
                     );
+
+                    // Validate that each axon really points
+                    // to the neuron on previous layer
+                    for axon in &nb.neurons[*neuron_id].inputs {
+                        assert_eq!(
+                            nb.layers[i - 1]
+                                .neurons
+                                .iter()
+                                .filter(|x| **x == axon.left)
+                                .count(),
+                            1
+                        );
+                    }
                 }
             }
         });
