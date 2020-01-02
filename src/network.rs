@@ -9,27 +9,48 @@ pub struct Network {
 }
 
 impl Network {
-    pub fn new() -> Network {
+    fn new() -> Network {
         Network {
             neurons: Arena::new(),
             layers: Vec::new(),
         }
     }
+
+    fn setup_inputs(&mut self, inputs: Vec<fn() -> f64>) {
+        inputs.iter().enumerate().for_each(|(index, input)| {
+            let neuron_id = self.layers[0].neurons[index];
+            let neuron = &mut self.neurons[neuron_id];
+
+            assert!(neuron.inputs.is_empty());
+
+            // TODO: Attach "input" to "neuron".
+            // Currently, only Axon can be attached, so we need a common trait
+            // that will provide the "get_value()" function. And then we need
+            // to store these traits in Neuron::inputs()
+        });
+    }
 }
 
 pub struct NetworkBuilder {
     neurons_in_layers: Vec<usize>,
+    inputs: Option<Vec<fn() -> f64>>,
 }
 
 impl NetworkBuilder {
     pub fn new() -> NetworkBuilder {
         NetworkBuilder {
             neurons_in_layers: Vec::new(),
+            inputs: None,
         }
     }
 
     pub fn with_neurons_in_layers(&mut self, neurons_in_layers: Vec<usize>) -> &mut Self {
         self.neurons_in_layers = neurons_in_layers;
+        self
+    }
+
+    pub fn with_inputs(&mut self, inputs: Vec<fn() -> f64>) -> &mut Self {
+        self.inputs = Some(inputs);
         self
     }
 
@@ -74,6 +95,15 @@ impl NetworkBuilder {
             1usize,
             "Last layer must consist of a single neuron"
         );
+        assert!(
+            self.inputs.as_ref().is_some(),
+            "No network inputs provided, use with_inputs() function"
+        );
+        assert_eq!(
+            self.neurons_in_layers.len(),
+            self.inputs.as_ref().unwrap().len(),
+            "Number of neurons on the first layer must be the same as number of inputs"
+        );
 
         let mut network = Network::new();
         self.neurons_in_layers
@@ -92,8 +122,14 @@ mod tests {
     use crate::network::*;
     #[test]
     fn build_network() {
+        let input1 = || 1.1;
+        let input2 = || 2.2;
+        let input3 = || 3.3;
+        let input4 = || 4.4;
+
         let network = NetworkBuilder::new()
             .with_neurons_in_layers(vec![3, 2, 2, 1])
+            .with_inputs(vec![input1, input2, input3, input4])
             .build();
 
         // Check number of layers
