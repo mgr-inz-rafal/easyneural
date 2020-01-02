@@ -92,34 +92,34 @@ mod tests {
     use crate::network::*;
     #[test]
     fn build_network() {
-        let nb = NetworkBuilder::new()
+        let network = NetworkBuilder::new()
             .with_neurons_in_layers(vec![3, 2, 2, 1])
             .build();
 
         // Check number of layers
-        assert_eq!(nb.layers.len(), 4);
+        assert_eq!(network.layers.len(), 4);
 
         // Check number of neurons per layer
-        let mut layer_iterator = nb.layers.iter();
+        let mut layer_iterator = network.layers.iter();
         assert_eq!(layer_iterator.next().unwrap().neurons.len(), 3);
         assert_eq!(layer_iterator.next().unwrap().neurons.len(), 2);
         assert_eq!(layer_iterator.next().unwrap().neurons.len(), 2);
         assert_eq!(layer_iterator.next().unwrap().neurons.len(), 1);
 
         // Validate proper connections between neurons
-        nb.layers.iter().enumerate().for_each(|(i, _)| {
+        network.layers.iter().enumerate().for_each(|(i, _)| {
             if i == 0 {
                 // Neurons on the first layer should have no input
-                for neuron_id in &nb.layers[i].neurons {
-                    assert!(nb.neurons[*neuron_id].inputs.is_empty());
+                for neuron_id in &network.layers[i].neurons {
+                    assert!(network.neurons[*neuron_id].inputs.is_empty());
                 }
             } else {
                 // Validate that each neuron on the current layer
                 // have exactly one axon per neuron in previous layer
-                let neuron_count_on_previous_layer = nb.layers[i - 1].neurons.len();
-                for neuron_id in &nb.layers[i].neurons {
+                let neuron_count_on_previous_layer = network.layers[i - 1].neurons.len();
+                for neuron_id in &network.layers[i].neurons {
                     assert_eq!(
-                        nb.neurons[*neuron_id].inputs.len(),
+                        network.neurons[*neuron_id].inputs.len(),
                         neuron_count_on_previous_layer
                     );
 
@@ -127,10 +127,10 @@ mod tests {
                     // - each axon really points to the neuron on previous layer
                     // - each axon points to different neuron
                     let mut processed_neurons = Vec::new();
-                    for axon in &nb.neurons[*neuron_id].inputs {
+                    for axon in &network.neurons[*neuron_id].inputs {
                         assert!(!processed_neurons.contains(&axon.left));
                         assert_eq!(
-                            nb.layers[i - 1]
+                            network.layers[i - 1]
                                 .neurons
                                 .iter()
                                 .filter(|x| **x == axon.left)
