@@ -43,13 +43,7 @@ impl Network {
         inputs.iter().enumerate().for_each(|(index, input)| {
             let neuron_id = self.layers[0].neurons[index];
             let neuron = &mut self.neurons[neuron_id];
-
             assert!(neuron.inputs.is_empty());
-
-            // TODO: Attach "input" to "neuron".
-            // Currently, only Axon can be attached, so we need a common trait
-            // that will provide the "get_value()" function. And then we need
-            // to store these traits in Neuron::inputs()
             neuron.set_input(Box::new(NetworkInput::new(*input)));
         });
     }
