@@ -100,7 +100,7 @@ impl NetworkBuilder {
             "No network inputs provided, use with_inputs() function"
         );
         assert_eq!(
-            self.neurons_in_layers.len(),
+            self.neurons_in_layers[0],
             self.inputs.as_ref().unwrap().len(),
             "Number of neurons on the first layer must be the same as number of inputs"
         );
