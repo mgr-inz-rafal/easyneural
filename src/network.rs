@@ -62,7 +62,7 @@ impl NetworkBuilder {
     ) {
         if let Some(last_layer) = layer {
             last_layer.neurons.iter().for_each(|n| {
-                neurons[*new_neuron].inputs.push(Axon::new(*n));
+                neurons[*new_neuron].inputs.push(Box::new(Axon::new(*n)));
             })
         } else {
             panic!("Trying to connect a neuron to the non-existing layer");
@@ -159,21 +159,30 @@ mod tests {
                         neuron_count_on_previous_layer
                     );
 
+                    // TODO:
+                    // Reconsider the check below. It requires the trait to expose
+                    // the get_id() function, which is not used in any other place.
+                    //
+                    //
                     // Validate that:
                     // - each axon really points to the neuron on previous layer
                     // - each axon points to different neuron
                     let mut processed_neurons = Vec::new();
                     for axon in &network.neurons[*neuron_id].inputs {
-                        assert!(!processed_neurons.contains(&axon.left));
-                        assert_eq!(
-                            network.layers[i - 1]
-                                .neurons
-                                .iter()
-                                .filter(|x| **x == axon.left)
-                                .count(),
-                            1
-                        );
-                        processed_neurons.push(axon.left);
+                        if let Some(ref neuron_id) = &axon.get_id() {
+                            assert!(!processed_neurons.contains(neuron_id));
+                            assert_eq!(
+                                network.layers[i - 1]
+                                    .neurons
+                                    .iter()
+                                    .filter(|x| *x == neuron_id)
+                                    .count(),
+                                1
+                            );
+                            processed_neurons.push(*neuron_id);
+                        } else {
+                            panic!("Found AxonInput-object without a neuron id. Is this the first layer of the network?");
+                        }
                     }
                 }
             }

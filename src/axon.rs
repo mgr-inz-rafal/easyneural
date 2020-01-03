@@ -1,3 +1,4 @@
+use super::axon_input::AxonInput;
 use super::neuron::Neuron;
 use id_arena::Id;
 
@@ -9,8 +10,14 @@ impl Axon {
     pub(crate) fn new(left: Id<Neuron>) -> Axon {
         Axon { left }
     }
+}
 
-    fn get_value() -> f64 {
+impl AxonInput for Axon {
+    fn get_value(&self) -> f64 {
         123.456
+    }
+
+    fn get_id(&self) -> Option<Id<Neuron>> {
+        Some(self.left)
     }
 }
