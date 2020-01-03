@@ -1,7 +1,29 @@
 use super::axon::Axon;
+use super::axon_input::AxonInput;
 use super::layer::Layer;
 use super::neuron::Neuron;
 use id_arena::{Arena, Id};
+
+struct NetworkInput {
+    value_provider: fn() -> f64,
+}
+
+impl NetworkInput {
+    #[allow(dead_code)]
+    fn new(value_provider: fn() -> f64) -> NetworkInput {
+        NetworkInput { value_provider }
+    }
+}
+
+impl AxonInput for NetworkInput {
+    fn get_value(&self) -> f64 {
+        (self.value_provider)()
+    }
+
+    fn get_id(&self) -> Option<Id<Neuron>> {
+        None
+    }
+}
 
 pub struct Network {
     neurons: Arena<Neuron>,
@@ -9,27 +31,44 @@ pub struct Network {
 }
 
 impl Network {
-    pub fn new() -> Network {
+    fn new() -> Network {
         Network {
             neurons: Arena::new(),
             layers: Vec::new(),
         }
     }
+
+    #[allow(dead_code)]
+    fn setup_inputs(&mut self, inputs: Vec<fn() -> f64>) {
+        inputs.iter().enumerate().for_each(|(index, input)| {
+            let neuron_id = self.layers[0].neurons[index];
+            let neuron = &mut self.neurons[neuron_id];
+            assert!(neuron.inputs.is_empty());
+            neuron.set_input(Box::new(NetworkInput::new(*input)));
+        });
+    }
 }
 
 pub struct NetworkBuilder {
     neurons_in_layers: Vec<usize>,
+    inputs: Option<Vec<fn() -> f64>>,
 }
 
 impl NetworkBuilder {
     pub fn new() -> NetworkBuilder {
         NetworkBuilder {
             neurons_in_layers: Vec::new(),
+            inputs: None,
         }
     }
 
     pub fn with_neurons_in_layers(&mut self, neurons_in_layers: Vec<usize>) -> &mut Self {
         self.neurons_in_layers = neurons_in_layers;
+        self
+    }
+
+    pub fn with_inputs(&mut self, inputs: Vec<fn() -> f64>) -> &mut Self {
+        self.inputs = Some(inputs);
         self
     }
 
@@ -41,7 +80,7 @@ impl NetworkBuilder {
     ) {
         if let Some(last_layer) = layer {
             last_layer.neurons.iter().for_each(|n| {
-                neurons[*new_neuron].inputs.push(Axon::new(*n));
+                neurons[*new_neuron].inputs.push(Box::new(Axon::new(*n)));
             })
         } else {
             panic!("Trying to connect a neuron to the non-existing layer");
@@ -74,6 +113,15 @@ impl NetworkBuilder {
             1usize,
             "Last layer must consist of a single neuron"
         );
+        assert!(
+            self.inputs.as_ref().is_some(),
+            "No network inputs provided, use with_inputs() function"
+        );
+        assert_eq!(
+            self.neurons_in_layers[0],
+            self.inputs.as_ref().unwrap().len(),
+            "Number of neurons on the first layer must be the same as number of inputs"
+        );
 
         let mut network = Network::new();
         self.neurons_in_layers
@@ -83,6 +131,7 @@ impl NetworkBuilder {
                 let new_layer = self.create_layer(&mut network, i);
                 network.layers.push(new_layer);
             });
+        network.setup_inputs(self.inputs.as_ref().unwrap().to_vec());
         network
     }
 }
@@ -91,53 +140,83 @@ impl NetworkBuilder {
 mod tests {
     use crate::network::*;
     #[test]
-    fn build_network() {
-        let nb = NetworkBuilder::new()
+    fn network_structure() {
+        let input1 = || 1.1;
+        let input2 = || 2.2;
+        let input3 = || 3.3;
+
+        let network = NetworkBuilder::new()
             .with_neurons_in_layers(vec![3, 2, 2, 1])
+            .with_inputs(vec![input1, input2, input3])
             .build();
 
         // Check number of layers
-        assert_eq!(nb.layers.len(), 4);
+        assert_eq!(network.layers.len(), 4);
+
+        // Check that inputs provide expected values
+        let first_layer = &network.layers[0];
+        let mut neuron_iterator = first_layer.neurons.iter();
+        assert!(relative_eq!(
+            network.neurons[*neuron_iterator.next().unwrap()].inputs[0].get_value(),
+            1.1
+        ));
+        assert!(relative_eq!(
+            network.neurons[*neuron_iterator.next().unwrap()].inputs[0].get_value(),
+            2.2
+        ));
+        assert!(relative_eq!(
+            network.neurons[*neuron_iterator.next().unwrap()].inputs[0].get_value(),
+            3.3
+        ));
 
         // Check number of neurons per layer
-        let mut layer_iterator = nb.layers.iter();
+        let mut layer_iterator = network.layers.iter();
         assert_eq!(layer_iterator.next().unwrap().neurons.len(), 3);
         assert_eq!(layer_iterator.next().unwrap().neurons.len(), 2);
         assert_eq!(layer_iterator.next().unwrap().neurons.len(), 2);
         assert_eq!(layer_iterator.next().unwrap().neurons.len(), 1);
 
         // Validate proper connections between neurons
-        nb.layers.iter().enumerate().for_each(|(i, _)| {
+        network.layers.iter().enumerate().for_each(|(i, _)| {
             if i == 0 {
-                // Neurons on the first layer should have no input
-                for neuron_id in &nb.layers[i].neurons {
-                    assert!(nb.neurons[*neuron_id].inputs.is_empty());
+                // Neurons on the first layer should have exactly one input
+                for neuron_id in &network.layers[i].neurons {
+                    assert_eq!(network.neurons[*neuron_id].inputs.len(), 1);
                 }
             } else {
                 // Validate that each neuron on the current layer
                 // have exactly one axon per neuron in previous layer
-                let neuron_count_on_previous_layer = nb.layers[i - 1].neurons.len();
-                for neuron_id in &nb.layers[i].neurons {
+                let neuron_count_on_previous_layer = network.layers[i - 1].neurons.len();
+                for neuron_id in &network.layers[i].neurons {
                     assert_eq!(
-                        nb.neurons[*neuron_id].inputs.len(),
+                        network.neurons[*neuron_id].inputs.len(),
                         neuron_count_on_previous_layer
                     );
 
+                    // TODO:
+                    // Reconsider the check below. It requires the trait to expose
+                    // the get_id() function, which is not used in any other place.
+                    //
+                    //
                     // Validate that:
                     // - each axon really points to the neuron on previous layer
                     // - each axon points to different neuron
                     let mut processed_neurons = Vec::new();
-                    for axon in &nb.neurons[*neuron_id].inputs {
-                        assert!(!processed_neurons.contains(&axon.left));
-                        assert_eq!(
-                            nb.layers[i - 1]
-                                .neurons
-                                .iter()
-                                .filter(|x| **x == axon.left)
-                                .count(),
-                            1
-                        );
-                        processed_neurons.push(axon.left);
+                    for axon in &network.neurons[*neuron_id].inputs {
+                        if let Some(ref neuron_id) = &axon.get_id() {
+                            assert!(!processed_neurons.contains(neuron_id));
+                            assert_eq!(
+                                network.layers[i - 1]
+                                    .neurons
+                                    .iter()
+                                    .filter(|x| *x == neuron_id)
+                                    .count(),
+                                1
+                            );
+                            processed_neurons.push(*neuron_id);
+                        } else {
+                            panic!("Found AxonInput-object without a neuron id. Is this the first layer of the network?");
+                        }
                     }
                 }
             }
