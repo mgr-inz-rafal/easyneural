@@ -146,7 +146,7 @@ impl NetworkBuilder {
 mod tests {
     use crate::network::*;
     #[test]
-    fn build_network() {
+    fn network_structure() {
         let input1 = || 1.1;
         let input2 = || 2.2;
         let input3 = || 3.3;
