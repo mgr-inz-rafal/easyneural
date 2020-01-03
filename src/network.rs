@@ -162,18 +162,18 @@ mod tests {
         // Check that inputs provide expected values
         let first_layer = &network.layers[0];
         let mut neuron_iterator = first_layer.neurons.iter();
-        assert_eq!(
+        assert!(relative_eq!(
             network.neurons[*neuron_iterator.next().unwrap()].inputs[0].get_value(),
             1.1
-        );
-        assert_eq!(
+        ));
+        assert!(relative_eq!(
             network.neurons[*neuron_iterator.next().unwrap()].inputs[0].get_value(),
             2.2
-        );
-        assert_eq!(
+        ));
+        assert!(relative_eq!(
             network.neurons[*neuron_iterator.next().unwrap()].inputs[0].get_value(),
             3.3
-        );
+        ));
 
         // Check number of neurons per layer
         let mut layer_iterator = network.layers.iter();
