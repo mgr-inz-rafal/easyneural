@@ -1,13 +1,12 @@
 use super::axon_input::AxonInput;
 use super::neuron::Neuron;
-use id_arena::Id;
 
 pub(crate) struct Axon {
-    pub left: Id<Neuron>,
+    pub left: usize,
 }
 
 impl Axon {
-    pub(crate) fn new(left: Id<Neuron>) -> Axon {
+    pub(crate) fn new(left: usize) -> Axon {
         Axon { left }
     }
 }
@@ -17,7 +16,7 @@ impl AxonInput for Axon {
         123.456
     }
 
-    fn get_id(&self) -> Option<Id<Neuron>> {
+    fn get_id(&self) -> Option<usize> {
         Some(self.left)
     }
 }
