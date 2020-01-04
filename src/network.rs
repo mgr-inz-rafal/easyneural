@@ -16,13 +16,15 @@ fn value_closure_serialize<S: Serializer>(
 struct NetworkInput {
     #[serde(skip_deserializing, serialize_with = "value_closure_serialize")]
     value_provider: Option<fn() -> f64>,
+    weight: f64,
 }
 
 impl NetworkInput {
     #[allow(dead_code)]
-    fn new(value_provider: fn() -> f64) -> NetworkInput {
+    fn new(value_provider: fn() -> f64, weight: f64) -> NetworkInput {
         NetworkInput {
             value_provider: Some(value_provider),
+            weight,
         }
     }
 }
@@ -81,7 +83,10 @@ impl Network {
             let neuron_id = self.layers[0].neurons[index];
             let neuron = &mut self.neurons[neuron_id];
             assert!(neuron.inputs.is_empty());
-            neuron.set_input(Box::new(NetworkInput::new(*input)));
+            neuron.set_input(Box::new(NetworkInput::new(
+                *input,
+                self.toolbox.random_sampler.sample(&mut rand::thread_rng()),
+            )));
         });
     }
 }
