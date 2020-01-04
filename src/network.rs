@@ -5,10 +5,10 @@ use super::neuron::Neuron;
 use rand_distr::{Distribution, Normal};
 use serde::{Deserialize, Serialize, Serializer};
 
-fn value_closure_serialize<S>(foo: &Option<fn() -> f64>, s: S) -> Result<S::Ok, S::Error>
-where
-    S: Serializer,
-{
+fn value_closure_serialize<S: Serializer>(
+    foo: &Option<fn() -> f64>,
+    s: S,
+) -> Result<S::Ok, S::Error> {
     s.serialize_f64(foo.unwrap()())
 }
 
