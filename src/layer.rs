@@ -1,5 +1,3 @@
-use super::neuron::Neuron;
-
 pub(crate) struct Layer {
     pub(crate) neurons: Vec<usize>,
 }

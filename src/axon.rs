@@ -1,5 +1,4 @@
 use super::axon_input::AxonInput;
-use super::neuron::Neuron;
 
 pub(crate) struct Axon {
     pub left: usize,
