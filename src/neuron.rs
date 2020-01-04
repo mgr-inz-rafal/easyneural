@@ -1,5 +1,7 @@
 use super::axon_input::AxonInput;
+use serde::{Deserialize, Serialize};
 
+#[derive(Serialize, Deserialize)]
 pub(crate) struct Neuron {
     pub(crate) inputs: Vec<Box<dyn AxonInput>>,
 }

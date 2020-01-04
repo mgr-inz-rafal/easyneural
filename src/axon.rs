@@ -1,5 +1,7 @@
 use super::axon_input::AxonInput;
+use serde::{Deserialize, Serialize};
 
+#[derive(Serialize, Deserialize)]
 pub(crate) struct Axon {
     pub left: usize,
 }
@@ -10,6 +12,7 @@ impl Axon {
     }
 }
 
+#[typetag::serde]
 impl AxonInput for Axon {
     fn get_value(&self) -> f64 {
         123.456

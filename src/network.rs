@@ -2,21 +2,31 @@ use super::axon::Axon;
 use super::axon_input::AxonInput;
 use super::layer::Layer;
 use super::neuron::Neuron;
+use serde::{Deserialize, Serialize};
 
+#[derive(Serialize, Deserialize)]
 struct NetworkInput {
-    value_provider: fn() -> f64,
+    #[serde(skip_deserializing, skip_serializing)]
+    value_provider: Option<fn() -> f64>,
 }
 
 impl NetworkInput {
     #[allow(dead_code)]
     fn new(value_provider: fn() -> f64) -> NetworkInput {
-        NetworkInput { value_provider }
+        NetworkInput {
+            value_provider: Some(value_provider),
+        }
     }
 }
 
+#[typetag::serde]
 impl AxonInput for NetworkInput {
     fn get_value(&self) -> f64 {
-        (self.value_provider)()
+        if let Some(value_provider) = self.value_provider {
+            (value_provider)()
+        } else {
+            panic!("Empty value provider");
+        }
     }
 
     fn get_id(&self) -> Option<usize> {
@@ -24,6 +34,7 @@ impl AxonInput for NetworkInput {
     }
 }
 
+#[derive(Serialize, Deserialize)]
 pub struct Network {
     neurons: Vec<Neuron>,
     layers: Vec<Layer>,
