@@ -2,7 +2,6 @@ use super::axon::Axon;
 use super::axon_input::AxonInput;
 use super::layer::Layer;
 use super::neuron::Neuron;
-use id_arena::{Arena, Id};
 
 struct NetworkInput {
     value_provider: fn() -> f64,
@@ -20,20 +19,20 @@ impl AxonInput for NetworkInput {
         (self.value_provider)()
     }
 
-    fn get_id(&self) -> Option<Id<Neuron>> {
+    fn get_id(&self) -> Option<usize> {
         None
     }
 }
 
 pub struct Network {
-    neurons: Arena<Neuron>,
+    neurons: Vec<Neuron>,
     layers: Vec<Layer>,
 }
 
 impl Network {
     fn new() -> Network {
         Network {
-            neurons: Arena::new(),
+            neurons: Vec::new(),
             layers: Vec::new(),
         }
     }
@@ -74,13 +73,13 @@ impl NetworkBuilder {
 
     fn connect_neuron_to_layer(
         &self,
-        new_neuron: &Id<Neuron>,
+        new_neuron: usize,
         layer: Option<&Layer>,
-        neurons: &mut Arena<Neuron>,
+        neurons: &mut Vec<Neuron>,
     ) {
         if let Some(last_layer) = layer {
             last_layer.neurons.iter().for_each(|n| {
-                neurons[*new_neuron].inputs.push(Box::new(Axon::new(*n)));
+                neurons[new_neuron].inputs.push(Box::new(Axon::new(*n)));
             })
         } else {
             panic!("Trying to connect a neuron to the non-existing layer");
@@ -90,10 +89,11 @@ impl NetworkBuilder {
     fn create_layer(&self, network: &mut Network, i: usize) -> Layer {
         let mut new_layer = Layer::new();
         (0..self.neurons_in_layers[i]).for_each(|_| {
-            let new_neuron = network.neurons.alloc(Neuron::new());
+            network.neurons.push(Neuron::new());
+            let new_neuron = network.neurons.len() - 1;
             if i > 0 {
                 self.connect_neuron_to_layer(
-                    &new_neuron,
+                    new_neuron,
                     network.layers.last(),
                     &mut network.neurons,
                 );
