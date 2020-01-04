@@ -2,11 +2,18 @@ use super::axon::Axon;
 use super::axon_input::AxonInput;
 use super::layer::Layer;
 use super::neuron::Neuron;
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize, Serializer};
+
+fn value_closure_serialize<S>(foo: &Option<fn() -> f64>, s: S) -> Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
+    s.serialize_f64(foo.unwrap()())
+}
 
 #[derive(Serialize, Deserialize)]
 struct NetworkInput {
-    #[serde(skip_deserializing, skip_serializing)]
+    #[serde(skip_deserializing, serialize_with = "value_closure_serialize")]
     value_provider: Option<fn() -> f64>,
 }
 
