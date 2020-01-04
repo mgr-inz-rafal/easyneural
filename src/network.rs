@@ -114,14 +114,13 @@ impl NetworkBuilder {
         new_neuron: usize,
         layer: Option<&Layer>,
         neurons: &mut Vec<Neuron>,
-        toolbox: &mut NetworkToolbox,
+        weight: f64,
     ) {
         if let Some(last_layer) = layer {
             last_layer.neurons.iter().for_each(|n| {
-                neurons[new_neuron].inputs.push(Box::new(Axon::new(
-                    *n,
-                    toolbox.random_sampler.sample(&mut rand::thread_rng()),
-                )));
+                neurons[new_neuron]
+                    .inputs
+                    .push(Box::new(Axon::new(*n, weight)));
             })
         } else {
             panic!("Trying to connect a neuron to the non-existing layer");
@@ -138,7 +137,10 @@ impl NetworkBuilder {
                     new_neuron,
                     network.layers.last(),
                     &mut network.neurons,
-                    &mut network.toolbox,
+                    network
+                        .toolbox
+                        .random_sampler
+                        .sample(&mut rand::thread_rng()),
                 );
             }
             new_layer.neurons.push(new_neuron);
