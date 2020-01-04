@@ -32,6 +32,10 @@ impl AxonInput for NetworkInput {
     fn get_id(&self) -> Option<usize> {
         None
     }
+
+    fn get_weight(&self) -> f64 {
+        16.6
+    }
 }
 
 #[derive(Serialize, Deserialize)]
