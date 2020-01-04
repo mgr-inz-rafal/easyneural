@@ -8,11 +8,8 @@ pub(crate) struct Axon {
 }
 
 impl Axon {
-    pub(crate) fn new(left: usize) -> Axon {
-        Axon {
-            left,
-            weight: 12.34,
-        }
+    pub(crate) fn new(left: usize, weight: f64) -> Axon {
+        Axon { left, weight }
     }
 }
 
@@ -27,6 +24,6 @@ impl AxonInput for Axon {
     }
 
     fn get_weight(&self) -> f64 {
-        16.6
+        self.weight
     }
 }

@@ -2,6 +2,7 @@ use super::axon::Axon;
 use super::axon_input::AxonInput;
 use super::layer::Layer;
 use super::neuron::Neuron;
+use rand_distr::{Distribution, Normal};
 use serde::{Deserialize, Serialize, Serializer};
 
 fn value_closure_serialize<S>(foo: &Option<fn() -> f64>, s: S) -> Result<S::Ok, S::Error>
@@ -45,10 +46,24 @@ impl AxonInput for NetworkInput {
     }
 }
 
+struct NetworkToolbox {
+    random_sampler: Normal<f64>,
+}
+
+impl Default for NetworkToolbox {
+    fn default() -> Self {
+        NetworkToolbox {
+            random_sampler: Normal::new(0.0, 1.0).unwrap(),
+        }
+    }
+}
+
 #[derive(Serialize, Deserialize)]
 pub struct Network {
     neurons: Vec<Neuron>,
     layers: Vec<Layer>,
+    #[serde(skip_deserializing, skip_serializing)]
+    toolbox: NetworkToolbox,
 }
 
 impl Network {
@@ -56,6 +71,7 @@ impl Network {
         Network {
             neurons: Vec::new(),
             layers: Vec::new(),
+            toolbox: Default::default(),
         }
     }
 
@@ -98,10 +114,14 @@ impl NetworkBuilder {
         new_neuron: usize,
         layer: Option<&Layer>,
         neurons: &mut Vec<Neuron>,
+        toolbox: &mut NetworkToolbox,
     ) {
         if let Some(last_layer) = layer {
             last_layer.neurons.iter().for_each(|n| {
-                neurons[new_neuron].inputs.push(Box::new(Axon::new(*n)));
+                neurons[new_neuron].inputs.push(Box::new(Axon::new(
+                    *n,
+                    toolbox.random_sampler.sample(&mut rand::thread_rng()),
+                )));
             })
         } else {
             panic!("Trying to connect a neuron to the non-existing layer");
@@ -118,6 +138,7 @@ impl NetworkBuilder {
                     new_neuron,
                     network.layers.last(),
                     &mut network.neurons,
+                    &mut network.toolbox,
                 );
             }
             new_layer.neurons.push(new_neuron);
