@@ -158,11 +158,6 @@ impl NetworkBuilder {
             self.neurons_in_layers.len() > 1,
             "Network must have at least 2 layers"
         );
-        assert_eq!(
-            *self.neurons_in_layers.last().unwrap(), // Safe to unwrap() - length check above
-            1usize,
-            "Last layer must consist of a single neuron"
-        );
         assert!(
             self.inputs.as_ref().is_some(),
             "No network inputs provided, use with_inputs() function"
@@ -196,7 +191,7 @@ mod tests {
         let input3 = || 3.3;
 
         let network = NetworkBuilder::new()
-            .with_neurons_in_layers(vec![3, 2, 2, 1])
+            .with_neurons_in_layers(vec![3, 2, 4, 2])
             .with_inputs(vec![input1, input2, input3])
             .build();
 
@@ -223,8 +218,8 @@ mod tests {
         let mut layer_iterator = network.layers.iter();
         assert_eq!(layer_iterator.next().unwrap().neurons.len(), 3);
         assert_eq!(layer_iterator.next().unwrap().neurons.len(), 2);
+        assert_eq!(layer_iterator.next().unwrap().neurons.len(), 4);
         assert_eq!(layer_iterator.next().unwrap().neurons.len(), 2);
-        assert_eq!(layer_iterator.next().unwrap().neurons.len(), 1);
 
         // Validate proper connections between neurons
         network.layers.iter().enumerate().for_each(|(i, _)| {
