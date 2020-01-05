@@ -69,10 +69,10 @@ pub struct Network {
 }
 
 impl Network {
-    fn new() -> Network {
+    fn new(layer_count: usize, neuron_count: usize) -> Network {
         Network {
-            neurons: Vec::new(),
-            layers: Vec::new(),
+            neurons: Vec::with_capacity(neuron_count),
+            layers: Vec::with_capacity(layer_count),
             toolbox: Default::default(),
         }
     }
@@ -168,7 +168,15 @@ impl NetworkBuilder {
             "Number of neurons on the first layer must be the same as number of inputs"
         );
 
-        let mut network = Network::new();
+        let mut network = Network::new(
+            self.neurons_in_layers.len(),
+            self.neurons_in_layers.iter().sum(),
+        );
+
+        network.neurons.push(Neuron::new());
+        let neuron_buffer_address = &network.neurons[0] as *const _;
+        network.neurons.clear();
+
         self.neurons_in_layers
             .iter()
             .enumerate()
@@ -177,6 +185,10 @@ impl NetworkBuilder {
                 network.layers.push(new_layer);
             });
         network.setup_inputs(self.inputs.as_ref().unwrap().to_vec());
+        assert_eq!(
+            &network.neurons[0] as *const _, neuron_buffer_address,
+            "Reallocation of the neuron buffer detected"
+        );
         network
     }
 }
@@ -191,7 +203,7 @@ mod tests {
         let input3 = || 3.3;
 
         let network = NetworkBuilder::new()
-            .with_neurons_in_layers(vec![3, 2, 4, 2])
+            .with_neurons_in_layers(vec![3, 2, 5, 2])
             .with_inputs(vec![input1, input2, input3])
             .build();
 
@@ -218,7 +230,7 @@ mod tests {
         let mut layer_iterator = network.layers.iter();
         assert_eq!(layer_iterator.next().unwrap().neurons.len(), 3);
         assert_eq!(layer_iterator.next().unwrap().neurons.len(), 2);
-        assert_eq!(layer_iterator.next().unwrap().neurons.len(), 4);
+        assert_eq!(layer_iterator.next().unwrap().neurons.len(), 5);
         assert_eq!(layer_iterator.next().unwrap().neurons.len(), 2);
 
         // Validate proper connections between neurons
