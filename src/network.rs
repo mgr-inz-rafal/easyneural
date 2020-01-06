@@ -149,8 +149,8 @@ impl NetworkBuilder {
         self
     }
 
-    pub fn with_custom_randomizer(mut self, f: Box<dyn FnMut() -> f64>) -> Self {
-        self.custom_randomizer = Some(f);
+    pub fn with_custom_randomizer(mut self, f: impl FnMut() -> f64 + 'static) -> Self {
+        self.custom_randomizer = Some(Box::new(f));
         self
     }
 
@@ -291,7 +291,7 @@ mod tests {
         let network = NetworkBuilder::new()
             .with_neurons_in_layers(vec![2, 2, 1])
             .with_inputs(vec![input1, input2])
-            .with_custom_randomizer(Box::new(custom_randomizer))
+            .with_custom_randomizer(custom_randomizer)
             .build();
 
         network.neurons.iter().for_each(|neuron| {
@@ -315,7 +315,7 @@ mod tests {
         let network = NetworkBuilder::new()
             .with_neurons_in_layers(vec![2, 2, 1])
             .with_inputs(vec![input1, input2])
-            .with_custom_randomizer(Box::new(custom_random_number_generator))
+            .with_custom_randomizer(custom_random_number_generator)
             .build();
 
         let mut index = 1;
