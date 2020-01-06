@@ -2,14 +2,14 @@ use super::axon::Axon;
 use super::axon_input::AxonInput;
 use super::layer::Layer;
 use super::neuron::Neuron;
-use rand_distr::{Distribution, Normal};
+use rand_distr::Distribution;
 use serde::{Deserialize, Serialize, Serializer};
 
 fn value_closure_serialize<S: Serializer>(
-    foo: &Option<fn() -> f64>,
+    f: &Option<fn() -> f64>,
     s: S,
 ) -> Result<S::Ok, S::Error> {
-    s.serialize_f64(foo.unwrap()())
+    s.serialize_f64(f.unwrap()())
 }
 
 #[derive(Serialize, Deserialize)]
@@ -49,15 +49,13 @@ impl AxonInput for NetworkInput {
 }
 
 struct NetworkToolbox {
-    random_sampler: Normal<f64>,
     randomizer: Box<dyn FnMut() -> f64>,
 }
 
 impl Default for NetworkToolbox {
     fn default() -> Self {
         NetworkToolbox {
-            random_sampler: Normal::new(0.0, 1.0).unwrap(),
-            randomizer: Box::new(randomizer_foo),
+            randomizer: Box::new(default_randomizer),
         }
     }
 }
@@ -120,8 +118,8 @@ impl Network {
     }
 }
 
-fn randomizer_foo() -> f64 {
-    666.666
+fn default_randomizer() -> f64 {
+    crate::DEFAULT_RANDOM_SAMPLER.with(|sampler| sampler.sample(&mut rand::thread_rng()))
 }
 
 pub struct NetworkBuilder {
