@@ -88,6 +88,7 @@ impl Network {
 
     fn connect_neuron_to_layer(&mut self, new_neuron: usize) {
         if let Some(last_layer) = self.layers.last() {
+            // TODO: Closurise this loop
             for n in &last_layer.neurons {
                 self.neurons[new_neuron]
                     .inputs
@@ -99,6 +100,7 @@ impl Network {
     }
 
     fn create_layers(&mut self, neurons_in_layers: &Vec<usize>) {
+        // TODO: Closurise this loop
         for i in 0..neurons_in_layers.len() {
             let mut new_layer = Layer::new();
             (0..neurons_in_layers[i]).for_each(|_| {
