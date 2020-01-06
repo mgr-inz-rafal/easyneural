@@ -42,6 +42,10 @@ impl AxonInput for NetworkInput {
     fn get_id(&self) -> Option<usize> {
         None
     }
+
+    fn get_weight(&self) -> f64 {
+        self.weight
+    }
 }
 
 struct NetworkToolbox {
@@ -177,9 +181,7 @@ impl NetworkBuilder {
         network.neurons.push(Neuron::new());
         let neuron_buffer_address = &network.neurons[0] as *const _;
         network.neurons.clear();
-
         network.create_layers(&self.neurons_in_layers);
-
         network.setup_inputs(self.inputs.as_ref().unwrap().to_vec());
         assert_eq!(
             &network.neurons[0] as *const _, neuron_buffer_address,
@@ -274,6 +276,54 @@ mod tests {
                     }
                 }
             }
+        });
+    }
+
+    #[test]
+    fn custom_randomizer_as_funtion() {
+        let input1 = || 1.1;
+        let input2 = || 2.2;
+
+        fn custom_randomizer() -> f64 {
+            17.2
+        }
+
+        let network = NetworkBuilder::new()
+            .with_neurons_in_layers(vec![2, 2, 1])
+            .with_inputs(vec![input1, input2])
+            .with_custom_randomizer(Box::new(custom_randomizer))
+            .build();
+
+        network.neurons.iter().for_each(|neuron| {
+            neuron
+                .inputs
+                .iter()
+                .for_each(|input| assert!(relative_eq!(input.get_weight(), 17.2)))
+        });
+    }
+
+    #[test]
+    fn custom_randomizer_as_capturing_closure() {
+        let input1 = || 1.1;
+        let input2 = || 2.2;
+
+        let mut current_random_value = 0.0;
+        let custom_random_number_generator = move || {
+            current_random_value += 1.0;
+            current_random_value
+        };
+        let network = NetworkBuilder::new()
+            .with_neurons_in_layers(vec![2, 2, 1])
+            .with_inputs(vec![input1, input2])
+            .with_custom_randomizer(Box::new(custom_random_number_generator))
+            .build();
+
+        let mut index = 1;
+        network.neurons.iter().skip(2).for_each(|neuron| {
+            neuron.inputs.iter().for_each(|input| {
+                assert!(relative_eq!(input.get_weight(), index as f64));
+                index += 1;
+            })
         });
     }
 }
