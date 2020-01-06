@@ -42,10 +42,6 @@ impl AxonInput for NetworkInput {
     fn get_id(&self) -> Option<usize> {
         None
     }
-
-    fn get_weight(&self) -> f64 {
-        16.6
-    }
 }
 
 struct NetworkToolbox {
@@ -95,7 +91,7 @@ impl Network {
             for n in &last_layer.neurons {
                 self.neurons[new_neuron]
                     .inputs
-                    .push(Box::new(Axon::new(*n, 888.8)));
+                    .push(Box::new(Axon::new(*n, (self.toolbox.randomizer)())));
             }
         } else {
             panic!("Trying to connect a neuron to the non-existing layer");

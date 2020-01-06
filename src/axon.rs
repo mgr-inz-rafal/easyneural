@@ -22,8 +22,4 @@ impl AxonInput for Axon {
     fn get_id(&self) -> Option<usize> {
         Some(self.left)
     }
-
-    fn get_weight(&self) -> f64 {
-        self.weight
-    }
 }
