@@ -50,12 +50,14 @@ impl AxonInput for NetworkInput {
 
 struct NetworkToolbox {
     random_sampler: Normal<f64>,
+    randomizer: Box<dyn FnMut() -> f64>,
 }
 
 impl Default for NetworkToolbox {
     fn default() -> Self {
         NetworkToolbox {
             random_sampler: Normal::new(0.0, 1.0).unwrap(),
+            randomizer: Box::new(randomizer_foo),
         }
     }
 }
@@ -85,15 +87,47 @@ impl Network {
             assert!(neuron.inputs.is_empty());
             neuron.set_input(Box::new(NetworkInput::new(
                 *input,
-                self.toolbox.random_sampler.sample(&mut rand::thread_rng()),
+                (self.toolbox.randomizer)(),
             )));
         });
     }
+
+    fn connect_neuron_to_layer(&mut self, new_neuron: usize) {
+        if let Some(last_layer) = self.layers.last() {
+            for n in &last_layer.neurons {
+                self.neurons[new_neuron]
+                    .inputs
+                    .push(Box::new(Axon::new(*n, 888.8)));
+            }
+        } else {
+            panic!("Trying to connect a neuron to the non-existing layer");
+        }
+    }
+
+    fn create_layers(&mut self, neurons_in_layers: &Vec<usize>) {
+        for i in 0..neurons_in_layers.len() {
+            let mut new_layer = Layer::new();
+            (0..neurons_in_layers[i]).for_each(|_| {
+                self.neurons.push(Neuron::new());
+                let new_neuron = self.neurons.len() - 1;
+                if i > 0 {
+                    self.connect_neuron_to_layer(new_neuron);
+                }
+                new_layer.neurons.push(new_neuron);
+            });
+            self.layers.push(new_layer);
+        }
+    }
+}
+
+fn randomizer_foo() -> f64 {
+    666.666
 }
 
 pub struct NetworkBuilder {
     neurons_in_layers: Vec<usize>,
     inputs: Option<Vec<fn() -> f64>>,
+    custom_randomizer: Option<Box<dyn FnMut() -> f64>>,
 }
 
 impl NetworkBuilder {
@@ -101,59 +135,26 @@ impl NetworkBuilder {
         NetworkBuilder {
             neurons_in_layers: Vec::new(),
             inputs: None,
+            custom_randomizer: None,
         }
     }
 
-    pub fn with_neurons_in_layers(&mut self, neurons_in_layers: Vec<usize>) -> &mut Self {
+    pub fn with_neurons_in_layers(mut self, neurons_in_layers: Vec<usize>) -> Self {
         self.neurons_in_layers = neurons_in_layers;
         self
     }
 
-    pub fn with_inputs(&mut self, inputs: Vec<fn() -> f64>) -> &mut Self {
+    pub fn with_inputs(mut self, inputs: Vec<fn() -> f64>) -> Self {
         self.inputs = Some(inputs);
         self
     }
 
-    fn connect_neuron_to_layer(
-        &self,
-        new_neuron: usize,
-        layer: Option<&Layer>,
-        neurons: &mut Vec<Neuron>,
-        weight: f64,
-    ) {
-        if let Some(last_layer) = layer {
-            last_layer.neurons.iter().for_each(|n| {
-                neurons[new_neuron]
-                    .inputs
-                    .push(Box::new(Axon::new(*n, weight)));
-            })
-        } else {
-            panic!("Trying to connect a neuron to the non-existing layer");
-        }
+    pub fn with_custom_randomizer(mut self, f: Box<dyn FnMut() -> f64>) -> Self {
+        self.custom_randomizer = Some(f);
+        self
     }
 
-    fn create_layer(&self, network: &mut Network, i: usize) -> Layer {
-        let mut new_layer = Layer::new();
-        (0..self.neurons_in_layers[i]).for_each(|_| {
-            network.neurons.push(Neuron::new());
-            let new_neuron = network.neurons.len() - 1;
-            if i > 0 {
-                self.connect_neuron_to_layer(
-                    new_neuron,
-                    network.layers.last(),
-                    &mut network.neurons,
-                    network
-                        .toolbox
-                        .random_sampler
-                        .sample(&mut rand::thread_rng()),
-                );
-            }
-            new_layer.neurons.push(new_neuron);
-        });
-        new_layer
-    }
-
-    pub fn build(&self) -> Network {
+    pub fn build(self) -> Network {
         assert!(
             self.neurons_in_layers.len() > 1,
             "Network must have at least 2 layers"
@@ -173,22 +174,22 @@ impl NetworkBuilder {
             self.neurons_in_layers.iter().sum(),
         );
 
+        if let Some(custom_randomizer) = self.custom_randomizer {
+            network.toolbox.randomizer = custom_randomizer;
+        }
+
         network.neurons.push(Neuron::new());
         let neuron_buffer_address = &network.neurons[0] as *const _;
         network.neurons.clear();
 
-        self.neurons_in_layers
-            .iter()
-            .enumerate()
-            .for_each(|(i, _)| {
-                let new_layer = self.create_layer(&mut network, i);
-                network.layers.push(new_layer);
-            });
+        network.create_layers(&self.neurons_in_layers);
+
         network.setup_inputs(self.inputs.as_ref().unwrap().to_vec());
         assert_eq!(
             &network.neurons[0] as *const _, neuron_buffer_address,
             "Reallocation of the neuron buffer detected"
         );
+
         network
     }
 }
