@@ -20,7 +20,7 @@ impl Neuron {
 }
 
 pub(crate) struct NeuronBuilder<'a> {
-    layer: Option<&'a Layer>,
+    layer: Option<Option<&'a Layer>>,
 }
 
 impl<'a> NeuronBuilder<'a> {
@@ -28,7 +28,7 @@ impl<'a> NeuronBuilder<'a> {
         NeuronBuilder { layer: None }
     }
 
-    pub fn with_connection_to_layer(mut self, layer: &'a Layer) -> Self {
+    pub fn with_connection_to_layer(mut self, layer: Option<&'a Layer>) -> Self {
         self.layer = Some(layer);
         self
     }
@@ -36,10 +36,12 @@ impl<'a> NeuronBuilder<'a> {
     pub fn build(self, randomizer: &mut Box<(dyn FnMut() -> f64 + 'static)>) -> Neuron {
         let mut neuron = Neuron::new();
         if let Some(layer) = self.layer.as_ref() {
-            layer
-                .neurons
-                .iter()
-                .for_each(|n| neuron.inputs.push(Box::new(Axon::new(*n, (randomizer)()))));
+            if let Some(layer) = layer {
+                layer
+                    .neurons
+                    .iter()
+                    .for_each(|n| neuron.inputs.push(Box::new(Axon::new(*n, (randomizer)()))));
+            }
         }
         neuron
     }

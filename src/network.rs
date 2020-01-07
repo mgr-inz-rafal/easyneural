@@ -94,11 +94,11 @@ impl Network {
         for i in 0..neurons_in_layers.len() {
             let mut new_layer = Layer::new();
             (0..neurons_in_layers[i]).for_each(|_| {
-                let mut nb = NeuronBuilder::new();
-                if i > 0 {
-                    nb = nb.with_connection_to_layer(self.layers.last().unwrap());
-                }
-                self.neurons.push(nb.build(&mut self.toolbox.randomizer));
+                self.neurons.push(
+                    NeuronBuilder::new()
+                        .with_connection_to_layer(self.layers.last())
+                        .build(&mut self.toolbox.randomizer),
+                );
                 let new_neuron = self.neurons.len() - 1;
                 new_layer.neurons.push(new_neuron);
             });
