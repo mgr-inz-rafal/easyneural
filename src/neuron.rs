@@ -35,8 +35,10 @@ impl<'a> NeuronBuilder<'a> {
 
     pub fn build(self, randomizer: &mut Box<(dyn FnMut() -> f64 + 'static)>) -> Neuron {
         let mut neuron = Neuron::new();
-        if let Some(layer) = self.layer.as_ref() {
-            if let Some(layer) = layer {
+        if_chain! {
+            if let Some(layer) = self.layer.as_ref();
+            if let Some(layer) = layer;
+            then {
                 layer
                     .neurons
                     .iter()
