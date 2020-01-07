@@ -36,9 +36,10 @@ impl<'a> NeuronBuilder<'a> {
     pub fn build(self, randomizer: &mut Box<(dyn FnMut() -> f64 + 'static)>) -> Neuron {
         let mut neuron = Neuron::new();
         if let Some(layer) = self.layer.as_ref() {
-            for n in &layer.neurons {
-                neuron.inputs.push(Box::new(Axon::new(*n, (randomizer)())));
-            }
+            layer
+                .neurons
+                .iter()
+                .for_each(|n| neuron.inputs.push(Box::new(Axon::new(*n, (randomizer)()))));
         }
         neuron
     }
