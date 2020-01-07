@@ -1,7 +1,6 @@
-use super::axon::Axon;
 use super::axon_input::AxonInput;
 use super::layer::Layer;
-use super::neuron::Neuron;
+use super::neuron::{Neuron, NeuronBuilder};
 use rand_distr::Distribution;
 use serde::{Deserialize, Serialize, Serializer};
 
@@ -90,29 +89,17 @@ impl Network {
         });
     }
 
-    fn connect_neuron_to_layer(&mut self, new_neuron: usize) {
-        if let Some(last_layer) = self.layers.last() {
-            // TODO: Closurise this loop
-            for n in &last_layer.neurons {
-                self.neurons[new_neuron]
-                    .inputs
-                    .push(Box::new(Axon::new(*n, (self.toolbox.randomizer)())));
-            }
-        } else {
-            panic!("Trying to connect a neuron to the non-existing layer");
-        }
-    }
-
     fn create_layers(&mut self, neurons_in_layers: &Vec<usize>) {
         // TODO: Closurise this loop
         for i in 0..neurons_in_layers.len() {
             let mut new_layer = Layer::new();
             (0..neurons_in_layers[i]).for_each(|_| {
-                self.neurons.push(Neuron::new());
-                let new_neuron = self.neurons.len() - 1;
+                let mut nb = NeuronBuilder::new();
                 if i > 0 {
-                    self.connect_neuron_to_layer(new_neuron);
+                    nb = nb.with_connection_to_layer(self.layers.last().unwrap());
                 }
+                self.neurons.push(nb.build(&mut self.toolbox.randomizer));
+                let new_neuron = self.neurons.len() - 1;
                 new_layer.neurons.push(new_neuron);
             });
             self.layers.push(new_layer);
