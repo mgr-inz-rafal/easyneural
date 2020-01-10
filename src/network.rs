@@ -1,7 +1,7 @@
 #[warn(clippy::modulo_arithmetic)]
 use super::axon_input::AxonInput;
 use super::layer::{Layer, LayerBuilder};
-use super::neuron::{Neuron, NeuronBuilder};
+use super::neuron::Neuron;
 use rand_distr::Distribution;
 use serde::{Deserialize, Serialize, Serializer};
 
@@ -91,27 +91,15 @@ impl Network {
     }
 
     fn create_layers(&mut self, neurons_in_layers: &Vec<usize>) {
-        // TODO: Closurise this loop
-        for i in 0..neurons_in_layers.len() {
-            let layer = LayerBuilder::new()
-                .with_neuron_repository(&mut self.neurons)
-                .with_neurons(neurons_in_layers[i])
-                .with_previous_layer(self.layers.last())
-                .build(&mut self.toolbox.randomizer);
-            /*
-            let mut new_layer = Layer::new();
-            (0..neurons_in_layers[i]).for_each(|_| {
-                self.neurons.push(
-                    NeuronBuilder::new()
-                        .with_connection_to_layer(self.layers.last())
-                        .build(&mut self.toolbox.randomizer),
-                );
-                let new_neuron = self.neurons.len() - 1;
-                new_layer.neurons.push(new_neuron);
-            });
-            */
-            self.layers.push(layer);
-        }
+        neurons_in_layers.iter().enumerate().for_each(|(index, _)| {
+            self.layers.push(
+                LayerBuilder::new()
+                    .with_neuron_repository(&mut self.neurons)
+                    .with_neurons(neurons_in_layers[index])
+                    .with_previous_layer(self.layers.last())
+                    .build(&mut self.toolbox.randomizer),
+            );
+        });
     }
 }
 
