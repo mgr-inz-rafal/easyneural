@@ -1,4 +1,3 @@
-#[warn(clippy::modulo_arithmetic)]
 use super::axon_input::AxonInput;
 use super::layer::{Layer, LayerBuilder};
 use super::neuron::Neuron;
