@@ -47,8 +47,10 @@ impl<'a> LayerBuilder<'a> {
     pub fn build(&mut self, mut randomizer: &mut Box<(dyn FnMut() -> f64 + 'static)>) -> Layer {
         let mut layer = Layer::new();
         let previous_layer = self.previous_layer;
-        if let Some(number_of_neurons) = self.number_of_neurons {
-            if let Some(ref mut neuron_repository) = self.neuron_repository {
+        if_chain! {
+            if let Some(number_of_neurons) = self.number_of_neurons;
+            if let Some(ref mut neuron_repository) = self.neuron_repository;
+            then {
                 (0..number_of_neurons).for_each(|_| {
                     neuron_repository.push(
                         NeuronBuilder::new()
@@ -60,7 +62,6 @@ impl<'a> LayerBuilder<'a> {
                 });
             }
         }
-
         layer
     }
 }
