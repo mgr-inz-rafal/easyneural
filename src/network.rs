@@ -4,6 +4,7 @@ use super::neuron::Neuron;
 use rand_distr::Distribution;
 use serde::{Deserialize, Serialize, Serializer};
 
+#[allow(clippy::trivially_copy_pass_by_ref)]
 fn value_closure_serialize<S: Serializer>(
     f: &Option<fn() -> f64>,
     s: S,
@@ -89,7 +90,7 @@ impl Network {
         });
     }
 
-    fn create_layers(&mut self, neurons_in_layers: &Vec<usize>) {
+    fn create_layers(&mut self, neurons_in_layers: &[usize]) {
         neurons_in_layers.iter().enumerate().for_each(|(index, _)| {
             self.layers.push(
                 LayerBuilder::new()
@@ -106,6 +107,7 @@ fn default_randomizer() -> f64 {
     crate::DEFAULT_RANDOM_SAMPLER.with(|sampler| sampler.sample(&mut rand::thread_rng()))
 }
 
+#[derive(Default)]
 pub struct NetworkBuilder {
     neurons_in_layers: Vec<usize>,
     inputs: Option<Vec<fn() -> f64>>,
@@ -113,14 +115,6 @@ pub struct NetworkBuilder {
 }
 
 impl NetworkBuilder {
-    pub fn new() -> NetworkBuilder {
-        NetworkBuilder {
-            neurons_in_layers: Vec::new(),
-            inputs: None,
-            custom_randomizer: None,
-        }
-    }
-
     pub fn with_neurons_in_layers(mut self, neurons_in_layers: Vec<usize>) -> Self {
         self.neurons_in_layers = neurons_in_layers;
         self
