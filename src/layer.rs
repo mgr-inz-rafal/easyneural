@@ -44,6 +44,7 @@ impl<'a> LayerBuilder<'a> {
         self
     }
 
+    #[allow(clippy::borrowed_box)]
     pub fn build(&mut self, mut randomizer: &mut Box<(dyn FnMut() -> f64 + 'static)>) -> Layer {
         let mut layer = Layer::new();
         let previous_layer = self.previous_layer;

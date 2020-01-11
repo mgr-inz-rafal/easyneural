@@ -20,7 +20,7 @@ impl Neuron {
 }
 
 pub(crate) struct NeuronBuilder<'a> {
-    layer: Option<Option<&'a Layer>>,
+    layer: Option<&'a Layer>,
 }
 
 impl<'a> NeuronBuilder<'a> {
@@ -29,16 +29,15 @@ impl<'a> NeuronBuilder<'a> {
     }
 
     pub fn with_connection_to_layer(mut self, layer: Option<&'a Layer>) -> Self {
-        self.layer = Some(layer);
+        self.layer = layer;
         self
     }
 
+    #[allow(clippy::borrowed_box)]
     pub fn build(self, randomizer: &mut Box<(dyn FnMut() -> f64 + 'static)>) -> Neuron {
         let mut neuron = Neuron::new();
-        if_chain! {
-            if let Some(layer) = self.layer.as_ref();
-            if let Some(layer) = layer;
-            then {
+        if let Some(layer) = self.layer.as_ref() {
+            {
                 layer
                     .neurons
                     .iter()
