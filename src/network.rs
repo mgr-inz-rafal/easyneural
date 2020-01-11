@@ -177,10 +177,12 @@ mod tests {
         let input2 = || 2.2;
         let input3 = || 3.3;
 
-        let network = NetworkBuilder::new()
-            .with_neurons_in_layers(vec![3, 2, 5, 2])
-            .with_inputs(vec![input1, input2, input3])
-            .build();
+        let network = NetworkBuilder {
+            ..Default::default()
+        }
+        .with_neurons_in_layers(vec![3, 2, 5, 2])
+        .with_inputs(vec![input1, input2, input3])
+        .build();
 
         // Check number of layers
         assert_eq!(network.layers.len(), 4);
@@ -264,11 +266,13 @@ mod tests {
             17.2
         }
 
-        let network = NetworkBuilder::new()
-            .with_neurons_in_layers(vec![2, 2, 1])
-            .with_inputs(vec![input1, input2])
-            .with_custom_randomizer(custom_randomizer)
-            .build();
+        let network = NetworkBuilder {
+            ..Default::default()
+        }
+        .with_neurons_in_layers(vec![2, 2, 1])
+        .with_inputs(vec![input1, input2])
+        .with_custom_randomizer(custom_randomizer)
+        .build();
 
         network.neurons.iter().for_each(|neuron| {
             neuron
@@ -288,11 +292,13 @@ mod tests {
             current_random_value += 1.0;
             current_random_value
         };
-        let network = NetworkBuilder::new()
-            .with_neurons_in_layers(vec![2, 2, 1])
-            .with_inputs(vec![input1, input2])
-            .with_custom_randomizer(custom_random_number_generator)
-            .build();
+        let network = NetworkBuilder {
+            ..Default::default()
+        }
+        .with_neurons_in_layers(vec![2, 2, 1])
+        .with_inputs(vec![input1, input2])
+        .with_custom_randomizer(custom_random_number_generator)
+        .build();
 
         let mut index = 1;
         network.neurons.iter().skip(2).for_each(|neuron| {
