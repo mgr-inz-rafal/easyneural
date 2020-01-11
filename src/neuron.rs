@@ -1,4 +1,6 @@
+use super::axon::Axon;
 use super::axon_input::AxonInput;
+use super::layer::Layer;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
@@ -14,5 +16,35 @@ impl Neuron {
     #[allow(dead_code)]
     pub(crate) fn set_input(&mut self, input: Box<dyn AxonInput>) {
         self.inputs.push(input);
+    }
+}
+
+pub(crate) struct NeuronBuilder<'a> {
+    layer: Option<Option<&'a Layer>>,
+}
+
+impl<'a> NeuronBuilder<'a> {
+    pub fn new() -> NeuronBuilder<'a> {
+        NeuronBuilder { layer: None }
+    }
+
+    pub fn with_connection_to_layer(mut self, layer: Option<&'a Layer>) -> Self {
+        self.layer = Some(layer);
+        self
+    }
+
+    pub fn build(self, randomizer: &mut Box<(dyn FnMut() -> f64 + 'static)>) -> Neuron {
+        let mut neuron = Neuron::new();
+        if_chain! {
+            if let Some(layer) = self.layer.as_ref();
+            if let Some(layer) = layer;
+            then {
+                layer
+                    .neurons
+                    .iter()
+                    .for_each(|n| neuron.inputs.push(Box::new(Axon::new(*n, (randomizer)()))));
+            }
+        }
+        neuron
     }
 }

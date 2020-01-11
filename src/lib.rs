@@ -1,6 +1,8 @@
 #[cfg(test)]
 #[macro_use]
 extern crate approx;
+#[macro_use]
+extern crate if_chain;
 
 pub mod axon;
 pub mod axon_input;
