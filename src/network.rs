@@ -88,7 +88,9 @@ impl Network {
                 *input,
                 (self.toolbox.randomizer)(),
             )));
-            neuron.inputs_1.push(InputKind::Value(55.5));
+            neuron
+                .inputs_1
+                .push(InputKind::Value(Some(Box::new(*input))));
         });
     }
 
@@ -179,7 +181,8 @@ mod tests {
         let input2 = || 2.2;
         let input3 = || 3.3;
 
-        let network = NetworkBuilder {
+        let mut network = NetworkBuilder {
+            // TODO: No need to be mutable, I presume
             ..Default::default()
         }
         .with_neurons_in_layers(vec![3, 2, 5, 2])
@@ -193,35 +196,21 @@ mod tests {
         let first_layer = &network.layers[0];
         let mut neuron_iterator = first_layer.neurons.iter();
 
-        match network.neurons[*neuron_iterator.next().unwrap()].inputs_1[0] {
-            InputKind::Value(v) => println!("{}", v),
+        // TODO: Remove boilerplate
+        match &mut network.neurons[*neuron_iterator.next().unwrap()].inputs_1[0] {
+            InputKind::Value(cb) => assert!(relative_eq!(cb.as_mut().unwrap()(), 1.1)),
             _ => {}
         }
 
-        match network.neurons[*neuron_iterator.next().unwrap()].inputs_1[0] {
-            InputKind::Value(v) => println!("{}", v),
+        match &mut network.neurons[*neuron_iterator.next().unwrap()].inputs_1[0] {
+            InputKind::Value(cb) => assert!(relative_eq!(cb.as_mut().unwrap()(), 2.2)),
             _ => {}
         }
 
-        match network.neurons[*neuron_iterator.next().unwrap()].inputs_1[0] {
-            InputKind::Value(v) => println!("{}", v),
+        match &mut network.neurons[*neuron_iterator.next().unwrap()].inputs_1[0] {
+            InputKind::Value(cb) => assert!(relative_eq!(cb.as_mut().unwrap()(), 3.3)),
             _ => {}
         }
-
-        /*
-        assert!(relative_eq!(
-            network.neurons[*neuron_iterator.next().unwrap()].inputs[0].get_value(),
-            1.1
-        ));
-        assert!(relative_eq!(
-            network.neurons[*neuron_iterator.next().unwrap()].inputs[0].get_value(),
-            2.2
-        ));
-        assert!(relative_eq!(
-            network.neurons[*neuron_iterator.next().unwrap()].inputs[0].get_value(),
-            3.3
-        ));
-        */
 
         // Check number of neurons per layer
         let mut layer_iterator = network.layers.iter();

@@ -5,7 +5,9 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
 pub(crate) enum InputKind {
-    Value(f64),
+    // TODO: Should stay like that since only value should be serialized, but double check later
+    #[serde(skip_deserializing, skip_serializing)]
+    Value(Option<Box<dyn FnMut() -> f64>>),
     Neuron(usize),
 }
 
