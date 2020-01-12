@@ -4,13 +4,23 @@ use super::layer::Layer;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
+pub(crate) enum InputKind {
+    Value(f64),
+    Neuron(usize),
+}
+
+#[derive(Serialize, Deserialize)]
 pub(crate) struct Neuron {
     pub(crate) inputs: Vec<Box<dyn AxonInput>>,
+    pub(crate) inputs_1: Vec<InputKind>,
 }
 
 impl Neuron {
     pub fn new() -> Neuron {
-        Neuron { inputs: Vec::new() }
+        Neuron {
+            inputs: Vec::new(),
+            inputs_1: Vec::new(),
+        }
     }
 
     #[allow(dead_code)]
@@ -38,10 +48,9 @@ impl<'a> NeuronBuilder<'a> {
         let mut neuron = Neuron::new();
         if let Some(layer) = self.layer.as_ref() {
             {
-                layer
-                    .neurons
-                    .iter()
-                    .for_each(|n| neuron.inputs.push(Box::new(Axon::new(*n, (randomizer)()))));
+                layer.neurons.iter().for_each(|n| {
+                    neuron.inputs.push(Box::new(Axon::new(*n, (randomizer)())));
+                });
             }
         }
         neuron

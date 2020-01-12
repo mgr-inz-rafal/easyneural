@@ -1,6 +1,6 @@
 use super::axon_input::AxonInput;
 use super::layer::{Layer, LayerBuilder};
-use super::neuron::Neuron;
+use super::neuron::{InputKind, Neuron};
 use rand_distr::Distribution;
 use serde::{Deserialize, Serialize, Serializer};
 
@@ -83,10 +83,12 @@ impl Network {
             let neuron_id = self.layers[0].neurons[index];
             let neuron = &mut self.neurons[neuron_id];
             assert!(neuron.inputs.is_empty());
+            // TODO: Remove call to set_input
             neuron.set_input(Box::new(NetworkInput::new(
                 *input,
                 (self.toolbox.randomizer)(),
             )));
+            neuron.inputs_1.push(InputKind::Value(55.5));
         });
     }
 
@@ -190,6 +192,23 @@ mod tests {
         // Check that inputs provide expected values
         let first_layer = &network.layers[0];
         let mut neuron_iterator = first_layer.neurons.iter();
+
+        match network.neurons[*neuron_iterator.next().unwrap()].inputs_1[0] {
+            InputKind::Value(v) => println!("{}", v),
+            _ => {}
+        }
+
+        match network.neurons[*neuron_iterator.next().unwrap()].inputs_1[0] {
+            InputKind::Value(v) => println!("{}", v),
+            _ => {}
+        }
+
+        match network.neurons[*neuron_iterator.next().unwrap()].inputs_1[0] {
+            InputKind::Value(v) => println!("{}", v),
+            _ => {}
+        }
+
+        /*
         assert!(relative_eq!(
             network.neurons[*neuron_iterator.next().unwrap()].inputs[0].get_value(),
             1.1
@@ -202,6 +221,7 @@ mod tests {
             network.neurons[*neuron_iterator.next().unwrap()].inputs[0].get_value(),
             3.3
         ));
+        */
 
         // Check number of neurons per layer
         let mut layer_iterator = network.layers.iter();
