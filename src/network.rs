@@ -1,52 +1,7 @@
-use super::axon_input::AxonInput;
 use super::layer::{Layer, LayerBuilder};
 use super::neuron::{InputKind, Neuron};
 use rand_distr::Distribution;
-use serde::{Deserialize, Serialize, Serializer};
-
-#[allow(clippy::trivially_copy_pass_by_ref)]
-fn value_closure_serialize<S: Serializer>(
-    f: &Option<fn() -> f64>,
-    s: S,
-) -> Result<S::Ok, S::Error> {
-    s.serialize_f64(f.unwrap()())
-}
-
-#[derive(Serialize, Deserialize)]
-struct NetworkInput {
-    #[serde(skip_deserializing, serialize_with = "value_closure_serialize")]
-    value_provider: Option<fn() -> f64>,
-    weight: f64,
-}
-
-impl NetworkInput {
-    #[allow(dead_code)]
-    fn new(value_provider: fn() -> f64, weight: f64) -> NetworkInput {
-        NetworkInput {
-            value_provider: Some(value_provider),
-            weight,
-        }
-    }
-}
-
-#[typetag::serde]
-impl AxonInput for NetworkInput {
-    fn get_value(&self) -> f64 {
-        if let Some(value_provider) = self.value_provider {
-            (value_provider)()
-        } else {
-            panic!("Empty value provider");
-        }
-    }
-
-    fn get_id(&self) -> Option<usize> {
-        None
-    }
-
-    fn get_weight(&self) -> f64 {
-        self.weight
-    }
-}
+use serde::{Deserialize, Serialize};
 
 struct NetworkToolbox {
     randomizer: Box<dyn FnMut() -> f64>,
@@ -83,11 +38,6 @@ impl Network {
             let neuron_id = self.layers[0].neurons[index];
             let neuron = &mut self.neurons[neuron_id];
             assert!(neuron.inputs.is_empty());
-            // TODO: Remove call to set_input
-            neuron.set_input(Box::new(NetworkInput::new(
-                *input,
-                (self.toolbox.randomizer)(),
-            )));
             neuron
                 .inputs_1
                 .push(InputKind::Value(Some(Box::new(*input))));
