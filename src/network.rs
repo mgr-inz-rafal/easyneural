@@ -1,52 +1,7 @@
-use super::axon_input::AxonInput;
 use super::layer::{Layer, LayerBuilder};
-use super::neuron::Neuron;
+use super::neuron::{InputKind, Neuron};
 use rand_distr::Distribution;
-use serde::{Deserialize, Serialize, Serializer};
-
-#[allow(clippy::trivially_copy_pass_by_ref)]
-fn value_closure_serialize<S: Serializer>(
-    f: &Option<fn() -> f64>,
-    s: S,
-) -> Result<S::Ok, S::Error> {
-    s.serialize_f64(f.unwrap()())
-}
-
-#[derive(Serialize, Deserialize)]
-struct NetworkInput {
-    #[serde(skip_deserializing, serialize_with = "value_closure_serialize")]
-    value_provider: Option<fn() -> f64>,
-    weight: f64,
-}
-
-impl NetworkInput {
-    #[allow(dead_code)]
-    fn new(value_provider: fn() -> f64, weight: f64) -> NetworkInput {
-        NetworkInput {
-            value_provider: Some(value_provider),
-            weight,
-        }
-    }
-}
-
-#[typetag::serde]
-impl AxonInput for NetworkInput {
-    fn get_value(&self) -> f64 {
-        if let Some(value_provider) = self.value_provider {
-            (value_provider)()
-        } else {
-            panic!("Empty value provider");
-        }
-    }
-
-    fn get_id(&self) -> Option<usize> {
-        None
-    }
-
-    fn get_weight(&self) -> f64 {
-        self.weight
-    }
-}
+use serde::{Deserialize, Serialize};
 
 struct NetworkToolbox {
     randomizer: Box<dyn FnMut() -> f64>,
@@ -83,10 +38,7 @@ impl Network {
             let neuron_id = self.layers[0].neurons[index];
             let neuron = &mut self.neurons[neuron_id];
             assert!(neuron.inputs.is_empty());
-            neuron.set_input(Box::new(NetworkInput::new(
-                *input,
-                (self.toolbox.randomizer)(),
-            )));
+            neuron.inputs.push(InputKind::Value(Some(Box::new(*input))));
         });
     }
 
@@ -177,7 +129,8 @@ mod tests {
         let input2 = || 2.2;
         let input3 = || 3.3;
 
-        let network = NetworkBuilder {
+        // TODO: No need to be mutable, I presume
+        let mut network = NetworkBuilder {
             ..Default::default()
         }
         .with_neurons_in_layers(vec![3, 2, 5, 2])
@@ -190,18 +143,22 @@ mod tests {
         // Check that inputs provide expected values
         let first_layer = &network.layers[0];
         let mut neuron_iterator = first_layer.neurons.iter();
-        assert!(relative_eq!(
-            network.neurons[*neuron_iterator.next().unwrap()].inputs[0].get_value(),
-            1.1
-        ));
-        assert!(relative_eq!(
-            network.neurons[*neuron_iterator.next().unwrap()].inputs[0].get_value(),
-            2.2
-        ));
-        assert!(relative_eq!(
-            network.neurons[*neuron_iterator.next().unwrap()].inputs[0].get_value(),
-            3.3
-        ));
+
+        // TODO: Remove the copy&pasted boilerplate
+        match &mut network.neurons[*neuron_iterator.next().unwrap()].inputs[0] {
+            InputKind::Value(cb) => assert!(relative_eq!(cb.as_mut().unwrap()(), 1.1)),
+            _ => {}
+        }
+
+        match &mut network.neurons[*neuron_iterator.next().unwrap()].inputs[0] {
+            InputKind::Value(cb) => assert!(relative_eq!(cb.as_mut().unwrap()(), 2.2)),
+            _ => {}
+        }
+
+        match &mut network.neurons[*neuron_iterator.next().unwrap()].inputs[0] {
+            InputKind::Value(cb) => assert!(relative_eq!(cb.as_mut().unwrap()(), 3.3)),
+            _ => {}
+        }
 
         // Check number of neurons per layer
         let mut layer_iterator = network.layers.iter();
@@ -227,29 +184,22 @@ mod tests {
                         neuron_count_on_previous_layer
                     );
 
-                    // TODO:
-                    // Reconsider the check below. It requires the trait to expose
-                    // the get_id() function, which is not used in any other place.
-                    //
-                    //
                     // Validate that:
                     // - each axon really points to the neuron on previous layer
                     // - each axon points to different neuron
                     let mut processed_neurons = Vec::new();
-                    for axon in &network.neurons[*neuron_id].inputs {
-                        if let Some(ref neuron_id) = &axon.get_id() {
-                            assert!(!processed_neurons.contains(neuron_id));
+                    for input in &network.neurons[*neuron_id].inputs {
+                        if let InputKind::Axon(axon) = input {
+                            assert!(!processed_neurons.contains(&axon.get_id()));
                             assert_eq!(
                                 network.layers[i - 1]
                                     .neurons
                                     .iter()
-                                    .filter(|x| *x == neuron_id)
+                                    .filter(|x| *x == &axon.get_id())
                                     .count(),
                                 1
                             );
                             processed_neurons.push(*neuron_id);
-                        } else {
-                            panic!("Found AxonInput-object without a neuron id. Is this the first layer of the network?");
                         }
                     }
                 }
@@ -266,7 +216,8 @@ mod tests {
             17.2
         }
 
-        let network = NetworkBuilder {
+        // TODO: No need to be mutable, I presume
+        let mut network = NetworkBuilder {
             ..Default::default()
         }
         .with_neurons_in_layers(vec![2, 2, 1])
@@ -274,12 +225,17 @@ mod tests {
         .with_custom_randomizer(custom_randomizer)
         .build();
 
-        network.neurons.iter().for_each(|neuron| {
-            neuron
-                .inputs
-                .iter()
-                .for_each(|input| assert!(relative_eq!(input.get_weight(), 17.2)))
-        });
+        network.neurons.iter_mut().for_each(|neuron| {
+            neuron.inputs.iter_mut().for_each(|input| {
+                match input {
+                    InputKind::Value(cb) => {
+                        let value = cb.as_mut().unwrap()();
+                        assert!(relative_eq!(value, 1.1) || relative_eq!(value, 2.2))
+                    }
+                    InputKind::Axon(axon) => assert!(relative_eq!(axon.get_weight(), 17.2)),
+                };
+            })
+        })
     }
 
     #[test]
@@ -292,7 +248,7 @@ mod tests {
             current_random_value += 1.0;
             current_random_value
         };
-        let network = NetworkBuilder {
+        let mut network = NetworkBuilder {
             ..Default::default()
         }
         .with_neurons_in_layers(vec![2, 2, 1])
@@ -301,9 +257,15 @@ mod tests {
         .build();
 
         let mut index = 1;
-        network.neurons.iter().skip(2).for_each(|neuron| {
-            neuron.inputs.iter().for_each(|input| {
-                assert!(relative_eq!(input.get_weight(), index as f64));
+        network.neurons.iter_mut().skip(2).for_each(|neuron| {
+            neuron.inputs.iter_mut().for_each(|input| {
+                match input {
+                    InputKind::Value(cb) => {
+                        let value = cb.as_mut().unwrap()();
+                        assert!(relative_eq!(value, 1.1) || relative_eq!(value, 2.2))
+                    }
+                    InputKind::Axon(axon) => assert!(relative_eq!(axon.get_weight(), index as f64)),
+                };
                 index += 1;
             })
         });

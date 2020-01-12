@@ -5,7 +5,6 @@ extern crate approx;
 extern crate if_chain;
 
 pub mod axon;
-pub mod axon_input;
 pub mod layer;
 pub mod network;
 pub mod neuron;
