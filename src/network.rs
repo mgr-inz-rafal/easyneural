@@ -240,7 +240,6 @@ mod tests {
         })
     }
 
-    /*
     #[test]
     fn custom_randomizer_as_capturing_closure() {
         let input1 = || 1.1;
@@ -251,7 +250,7 @@ mod tests {
             current_random_value += 1.0;
             current_random_value
         };
-        let network = NetworkBuilder {
+        let mut network = NetworkBuilder {
             ..Default::default()
         }
         .with_neurons_in_layers(vec![2, 2, 1])
@@ -260,12 +259,17 @@ mod tests {
         .build();
 
         let mut index = 1;
-        network.neurons.iter().skip(2).for_each(|neuron| {
-            neuron.inputs_1.iter().for_each(|input| {
-                assert!(relative_eq!(input.get_weight(), index as f64));
+        network.neurons.iter_mut().skip(2).for_each(|neuron| {
+            neuron.inputs_1.iter_mut().for_each(|input| {
+                match input {
+                    InputKind::Value(cb) => {
+                        let value = cb.as_mut().unwrap()();
+                        assert!(relative_eq!(value, 1.1) || relative_eq!(value, 2.2))
+                    }
+                    InputKind::Axon(axon) => assert!(relative_eq!(axon.get_weight(), index as f64)),
+                };
                 index += 1;
             })
         });
     }
-    */
 }
