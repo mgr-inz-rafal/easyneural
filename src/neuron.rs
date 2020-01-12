@@ -3,6 +3,7 @@ use super::axon_input::AxonInput;
 use super::layer::Layer;
 use serde::{Deserialize, Serialize};
 
+// TODO: Move InputKind to separate file
 #[derive(Serialize, Deserialize)]
 pub(crate) enum InputKind {
     // TODO: Should stay like that since only value should be serialized, but double check later
