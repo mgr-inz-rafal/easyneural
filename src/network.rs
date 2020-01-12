@@ -37,7 +37,7 @@ impl Network {
         inputs.iter().enumerate().for_each(|(index, input)| {
             let neuron_id = self.layers[0].neurons[index];
             let neuron = &mut self.neurons[neuron_id];
-            assert!(neuron.inputs.is_empty());
+            assert!(neuron.inputs_1.is_empty());
             neuron
                 .inputs_1
                 .push(InputKind::Value(Some(Box::new(*input))));
@@ -131,8 +131,8 @@ mod tests {
         let input2 = || 2.2;
         let input3 = || 3.3;
 
+        // TODO: No need to be mutable, I presume
         let mut network = NetworkBuilder {
-            // TODO: No need to be mutable, I presume
             ..Default::default()
         }
         .with_neurons_in_layers(vec![3, 2, 5, 2])
@@ -146,7 +146,7 @@ mod tests {
         let first_layer = &network.layers[0];
         let mut neuron_iterator = first_layer.neurons.iter();
 
-        // TODO: Remove boilerplate
+        // TODO: Remove the copy&pasted boilerplate
         match &mut network.neurons[*neuron_iterator.next().unwrap()].inputs_1[0] {
             InputKind::Value(cb) => assert!(relative_eq!(cb.as_mut().unwrap()(), 1.1)),
             _ => {}
@@ -174,7 +174,7 @@ mod tests {
             if i == 0 {
                 // Neurons on the first layer should have exactly one input
                 for neuron_id in &network.layers[i].neurons {
-                    assert_eq!(network.neurons[*neuron_id].inputs.len(), 1);
+                    assert_eq!(network.neurons[*neuron_id].inputs_1.len(), 1);
                 }
             } else {
                 // Validate that each neuron on the current layer
@@ -182,33 +182,26 @@ mod tests {
                 let neuron_count_on_previous_layer = network.layers[i - 1].neurons.len();
                 for neuron_id in &network.layers[i].neurons {
                     assert_eq!(
-                        network.neurons[*neuron_id].inputs.len(),
+                        network.neurons[*neuron_id].inputs_1.len(),
                         neuron_count_on_previous_layer
                     );
 
-                    // TODO:
-                    // Reconsider the check below. It requires the trait to expose
-                    // the get_id() function, which is not used in any other place.
-                    //
-                    //
                     // Validate that:
                     // - each axon really points to the neuron on previous layer
                     // - each axon points to different neuron
                     let mut processed_neurons = Vec::new();
-                    for axon in &network.neurons[*neuron_id].inputs {
-                        if let Some(ref neuron_id) = &axon.get_id() {
-                            assert!(!processed_neurons.contains(neuron_id));
+                    for input in &network.neurons[*neuron_id].inputs_1 {
+                        if let InputKind::Axon(axon) = input {
+                            assert!(!processed_neurons.contains(&axon.get_id()));
                             assert_eq!(
                                 network.layers[i - 1]
                                     .neurons
                                     .iter()
-                                    .filter(|x| *x == neuron_id)
+                                    .filter(|x| *x == &axon.get_id())
                                     .count(),
                                 1
                             );
                             processed_neurons.push(*neuron_id);
-                        } else {
-                            panic!("Found AxonInput-object without a neuron id. Is this the first layer of the network?");
                         }
                     }
                 }
@@ -225,7 +218,8 @@ mod tests {
             17.2
         }
 
-        let network = NetworkBuilder {
+        // TODO: No need to be mutable, I presume
+        let mut network = NetworkBuilder {
             ..Default::default()
         }
         .with_neurons_in_layers(vec![2, 2, 1])
@@ -233,14 +227,20 @@ mod tests {
         .with_custom_randomizer(custom_randomizer)
         .build();
 
-        network.neurons.iter().for_each(|neuron| {
-            neuron
-                .inputs
-                .iter()
-                .for_each(|input| assert!(relative_eq!(input.get_weight(), 17.2)))
-        });
+        network.neurons.iter_mut().for_each(|neuron| {
+            neuron.inputs_1.iter_mut().for_each(|input| {
+                match input {
+                    InputKind::Value(cb) => {
+                        let value = cb.as_mut().unwrap()();
+                        assert!(relative_eq!(value, 1.1) || relative_eq!(value, 2.2))
+                    }
+                    InputKind::Axon(axon) => assert!(relative_eq!(axon.get_weight(), 17.2)),
+                };
+            })
+        })
     }
 
+    /*
     #[test]
     fn custom_randomizer_as_capturing_closure() {
         let input1 = || 1.1;
@@ -261,10 +261,11 @@ mod tests {
 
         let mut index = 1;
         network.neurons.iter().skip(2).for_each(|neuron| {
-            neuron.inputs.iter().for_each(|input| {
+            neuron.inputs_1.iter().for_each(|input| {
                 assert!(relative_eq!(input.get_weight(), index as f64));
                 index += 1;
             })
         });
     }
+    */
 }

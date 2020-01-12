@@ -1,4 +1,3 @@
-use super::axon_input::AxonInput;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
@@ -11,19 +10,14 @@ impl Axon {
     pub(crate) fn new(left: usize, weight: f64) -> Axon {
         Axon { left, weight }
     }
-}
 
-#[typetag::serde]
-impl AxonInput for Axon {
-    fn get_value(&self) -> f64 {
-        123.456
+    #[allow(dead_code)]
+    pub(crate) fn get_id(&self) -> usize {
+        self.left
     }
 
-    fn get_id(&self) -> Option<usize> {
-        Some(self.left)
-    }
-
-    fn get_weight(&self) -> f64 {
+    #[allow(dead_code)]
+    pub(crate) fn get_weight(&self) -> f64 {
         self.weight
     }
 }
