@@ -13,14 +13,12 @@ pub(crate) enum InputKind {
 
 #[derive(Serialize, Deserialize)]
 pub(crate) struct Neuron {
-    pub(crate) inputs_1: Vec<InputKind>,
+    pub(crate) inputs: Vec<InputKind>,
 }
 
 impl Neuron {
     pub fn new() -> Neuron {
-        Neuron {
-            inputs_1: Vec::new(),
-        }
+        Neuron { inputs: Vec::new() }
     }
 }
 
@@ -45,7 +43,7 @@ impl<'a> NeuronBuilder<'a> {
             {
                 layer.neurons.iter().for_each(|n| {
                     neuron
-                        .inputs_1
+                        .inputs
                         .push(InputKind::Axon(Axon::new(*n, (randomizer)())));
                 });
             }

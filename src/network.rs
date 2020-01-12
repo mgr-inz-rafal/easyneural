@@ -37,10 +37,8 @@ impl Network {
         inputs.iter().enumerate().for_each(|(index, input)| {
             let neuron_id = self.layers[0].neurons[index];
             let neuron = &mut self.neurons[neuron_id];
-            assert!(neuron.inputs_1.is_empty());
-            neuron
-                .inputs_1
-                .push(InputKind::Value(Some(Box::new(*input))));
+            assert!(neuron.inputs.is_empty());
+            neuron.inputs.push(InputKind::Value(Some(Box::new(*input))));
         });
     }
 
@@ -147,17 +145,17 @@ mod tests {
         let mut neuron_iterator = first_layer.neurons.iter();
 
         // TODO: Remove the copy&pasted boilerplate
-        match &mut network.neurons[*neuron_iterator.next().unwrap()].inputs_1[0] {
+        match &mut network.neurons[*neuron_iterator.next().unwrap()].inputs[0] {
             InputKind::Value(cb) => assert!(relative_eq!(cb.as_mut().unwrap()(), 1.1)),
             _ => {}
         }
 
-        match &mut network.neurons[*neuron_iterator.next().unwrap()].inputs_1[0] {
+        match &mut network.neurons[*neuron_iterator.next().unwrap()].inputs[0] {
             InputKind::Value(cb) => assert!(relative_eq!(cb.as_mut().unwrap()(), 2.2)),
             _ => {}
         }
 
-        match &mut network.neurons[*neuron_iterator.next().unwrap()].inputs_1[0] {
+        match &mut network.neurons[*neuron_iterator.next().unwrap()].inputs[0] {
             InputKind::Value(cb) => assert!(relative_eq!(cb.as_mut().unwrap()(), 3.3)),
             _ => {}
         }
@@ -174,7 +172,7 @@ mod tests {
             if i == 0 {
                 // Neurons on the first layer should have exactly one input
                 for neuron_id in &network.layers[i].neurons {
-                    assert_eq!(network.neurons[*neuron_id].inputs_1.len(), 1);
+                    assert_eq!(network.neurons[*neuron_id].inputs.len(), 1);
                 }
             } else {
                 // Validate that each neuron on the current layer
@@ -182,7 +180,7 @@ mod tests {
                 let neuron_count_on_previous_layer = network.layers[i - 1].neurons.len();
                 for neuron_id in &network.layers[i].neurons {
                     assert_eq!(
-                        network.neurons[*neuron_id].inputs_1.len(),
+                        network.neurons[*neuron_id].inputs.len(),
                         neuron_count_on_previous_layer
                     );
 
@@ -190,7 +188,7 @@ mod tests {
                     // - each axon really points to the neuron on previous layer
                     // - each axon points to different neuron
                     let mut processed_neurons = Vec::new();
-                    for input in &network.neurons[*neuron_id].inputs_1 {
+                    for input in &network.neurons[*neuron_id].inputs {
                         if let InputKind::Axon(axon) = input {
                             assert!(!processed_neurons.contains(&axon.get_id()));
                             assert_eq!(
@@ -228,7 +226,7 @@ mod tests {
         .build();
 
         network.neurons.iter_mut().for_each(|neuron| {
-            neuron.inputs_1.iter_mut().for_each(|input| {
+            neuron.inputs.iter_mut().for_each(|input| {
                 match input {
                     InputKind::Value(cb) => {
                         let value = cb.as_mut().unwrap()();
@@ -260,7 +258,7 @@ mod tests {
 
         let mut index = 1;
         network.neurons.iter_mut().skip(2).for_each(|neuron| {
-            neuron.inputs_1.iter_mut().for_each(|input| {
+            neuron.inputs.iter_mut().for_each(|input| {
                 match input {
                     InputKind::Value(cb) => {
                         let value = cb.as_mut().unwrap()();
