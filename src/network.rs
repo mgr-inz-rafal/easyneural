@@ -59,7 +59,6 @@ fn default_randomizer() -> f64 {
     crate::DEFAULT_RANDOM_SAMPLER.with(|sampler| sampler.sample(&mut rand::thread_rng()))
 }
 
-#[derive(Default)]
 pub struct NetworkBuilder {
     neurons_in_layers: Vec<usize>,
     inputs: Option<Vec<fn() -> f64>>,
@@ -67,6 +66,14 @@ pub struct NetworkBuilder {
 }
 
 impl NetworkBuilder {
+    pub fn new() -> NetworkBuilder {
+        NetworkBuilder {
+            neurons_in_layers: Vec::new(),
+            inputs: None,
+            custom_randomizer: None,
+        }
+    }
+
     pub fn with_neurons_in_layers(mut self, neurons_in_layers: Vec<usize>) -> Self {
         self.neurons_in_layers = neurons_in_layers;
         self
@@ -130,12 +137,10 @@ mod tests {
         let input3 = || 3.3;
 
         // TODO: No need to be mutable, I presume
-        let mut network = NetworkBuilder {
-            ..Default::default()
-        }
-        .with_neurons_in_layers(vec![3, 2, 5, 2])
-        .with_inputs(vec![input1, input2, input3])
-        .build();
+        let mut network = NetworkBuilder::new()
+            .with_neurons_in_layers(vec![3, 2, 5, 2])
+            .with_inputs(vec![input1, input2, input3])
+            .build();
 
         // Check number of layers
         assert_eq!(network.layers.len(), 4);
@@ -217,13 +222,11 @@ mod tests {
         }
 
         // TODO: No need to be mutable, I presume
-        let mut network = NetworkBuilder {
-            ..Default::default()
-        }
-        .with_neurons_in_layers(vec![2, 2, 1])
-        .with_inputs(vec![input1, input2])
-        .with_custom_randomizer(custom_randomizer)
-        .build();
+        let mut network = NetworkBuilder::new()
+            .with_neurons_in_layers(vec![2, 2, 1])
+            .with_inputs(vec![input1, input2])
+            .with_custom_randomizer(custom_randomizer)
+            .build();
 
         network.neurons.iter_mut().for_each(|neuron| {
             neuron.inputs.iter_mut().for_each(|input| {
@@ -248,13 +251,11 @@ mod tests {
             current_random_value += 1.0;
             current_random_value
         };
-        let mut network = NetworkBuilder {
-            ..Default::default()
-        }
-        .with_neurons_in_layers(vec![2, 2, 1])
-        .with_inputs(vec![input1, input2])
-        .with_custom_randomizer(custom_random_number_generator)
-        .build();
+        let mut network = NetworkBuilder::new()
+            .with_neurons_in_layers(vec![2, 2, 1])
+            .with_inputs(vec![input1, input2])
+            .with_custom_randomizer(custom_random_number_generator)
+            .build();
 
         let mut index = 1;
         network.neurons.iter_mut().skip(2).for_each(|neuron| {

@@ -1,13 +1,10 @@
 use super::axon::Axon;
 use super::layer::Layer;
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize, Serializer};
 
-// TODO: Move InputKind to separate file
 #[derive(Serialize, Deserialize)]
 pub(crate) enum InputKind {
-    // TODO: Should stay like that since only value should be serialized, but double check later
-    #[serde(skip_deserializing, skip_serializing)]
-    Value(Option<Box<dyn FnMut() -> f64>>),
+    Value(#[serde(skip)] Option<Box<dyn FnMut() -> f64>>),
     Axon(Axon),
 }
 
