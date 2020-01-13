@@ -11,11 +11,15 @@ pub(crate) enum InputKind {
 #[derive(Serialize, Deserialize)]
 pub(crate) struct Neuron {
     pub(crate) inputs: Vec<InputKind>,
+    pub(crate) value: Option<f64>,
 }
 
 impl Neuron {
     pub fn new() -> Neuron {
-        Neuron { inputs: Vec::new() }
+        Neuron {
+            inputs: Vec::new(),
+            value: None,
+        }
     }
 }
 

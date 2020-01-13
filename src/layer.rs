@@ -12,6 +12,17 @@ impl Layer {
             neurons: Vec::new(),
         }
     }
+
+    pub(crate) fn fire(&mut self, neuron_repository: &mut Vec<Neuron>) {
+        for neuron_index in 0..self.neurons.len() {
+            let neuron_id = self.neurons[neuron_index];
+            println!("\tFiring neuron id: {}", neuron_id);
+            let neuron = &mut neuron_repository[neuron_id];
+            for input_index in 0..neuron.inputs.len() {
+                neuron.value = Some(23.0);
+            }
+        }
+    }
 }
 
 pub(crate) struct LayerBuilder<'a> {

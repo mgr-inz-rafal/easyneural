@@ -53,6 +53,14 @@ impl Network {
             );
         });
     }
+
+    pub fn fire(&mut self) {
+        // Start at the 2nd layer
+        for layer_id in 1..self.layers.len() {
+            println!("Firing layer id: {}", layer_id);
+            self.layers[layer_id].fire(&mut self.neurons);
+        }
+    }
 }
 
 fn default_randomizer() -> f64 {
@@ -270,5 +278,30 @@ mod tests {
                 index += 1;
             })
         });
+    }
+
+    #[test]
+    fn network_in_action() {
+        let input1 = || 17.54;
+        let input2 = || -9.214;
+
+        let mut current_random_value = 0.0;
+        let custom_random_number_generator = move || {
+            current_random_value += 1.0;
+            current_random_value
+        };
+        let mut network = NetworkBuilder::new()
+            .with_neurons_in_layers(vec![2, 2, 1])
+            .with_inputs(vec![input1, input2])
+            .with_custom_randomizer(custom_random_number_generator)
+            .build();
+
+        let serialized = serde_json::to_string(&network).unwrap();
+        println!("{}", serialized);
+
+        network.fire();
+
+        let serialized = serde_json::to_string(&network).unwrap();
+        println!("{}", serialized);
     }
 }
