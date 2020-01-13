@@ -21,6 +21,24 @@ impl Neuron {
             value: None,
         }
     }
+
+    pub(crate) fn fire(index: usize, neuron_repository: &mut Vec<Neuron>) -> f64 {
+        let sum = 0.0;
+        for input in &mut neuron_repository[index].inputs {
+            match input {
+                InputKind::Axon(axon) => {
+                    let my_weight = axon.get_weight();
+                    println!("\t\tAxon: weight: {}, connecting_value: {}", my_weight, 0.0);
+                }
+                InputKind::Value(ref mut cb) => {
+                    let my_value = (cb.as_mut().unwrap())();
+                    println!("\t\tValue: {}", my_value);
+                }
+            }
+        }
+
+        777777.7
+    }
 }
 
 pub(crate) struct NeuronBuilder<'a> {

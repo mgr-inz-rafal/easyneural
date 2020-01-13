@@ -55,11 +55,18 @@ impl Network {
     }
 
     pub fn fire(&mut self) {
-        // Start at the 2nd layer
-        for layer_id in 1..self.layers.len() {
-            println!("Firing layer id: {}", layer_id);
-            self.layers[layer_id].fire(&mut self.neurons);
+        for layer_id in 0..self.layers.len() {
+            println!("Firing layer {}", layer_id);
+            for neuron_index in 0..self.layers[layer_id].neurons.len() {
+                let neuron_id = self.layers[layer_id].neurons[neuron_index];
+                let new_value = Neuron::fire(neuron_id, &mut self.neurons);
+                //                self.set_neuron_value(neuron_index, new_value);
+            }
         }
+    }
+
+    fn set_neuron_value(&mut self, neuron_index: usize, value: f64) {
+        self.neurons[neuron_index].value = Some(value);
     }
 }
 
