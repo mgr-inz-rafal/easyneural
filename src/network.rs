@@ -317,15 +317,15 @@ mod tests {
         assert!(relative_eq!(neuron.next().unwrap().value.unwrap(), -9.214));
         assert!(relative_eq!(
             neuron.next().unwrap().value.unwrap(),
-            -0.8880000000000017
+            1.0 * 17.54 + 2.0 * -9.214
         ));
         assert!(relative_eq!(
             neuron.next().unwrap().value.unwrap(),
-            15.763999999999996
+            3.0 * 17.54 + 4.0 * -9.214
         ));
         assert!(relative_eq!(
             neuron.next().unwrap().value.unwrap(),
-            90.14399999999996
+            (1.0 * 17.54 + 2.0 * -9.214) * 5.0 + (3.0 * 17.54 + 4.0 * -9.214) * 6.0
         ));
 
         let serialized = serde_json::to_string(&network).unwrap();
