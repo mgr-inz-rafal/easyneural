@@ -60,12 +60,16 @@ impl Network {
             for neuron_index in 0..self.layers[layer_id].neurons.len() {
                 let neuron_id = self.layers[layer_id].neurons[neuron_index];
                 let new_value = Neuron::fire(neuron_id, &mut self.neurons);
-                //                self.set_neuron_value(neuron_index, new_value);
+                self.set_neuron_value(neuron_id, new_value);
             }
         }
     }
 
     fn set_neuron_value(&mut self, neuron_index: usize, value: f64) {
+        println!(
+            "\t\t\tSetting neuron at index {} to {}",
+            neuron_index, value
+        );
         self.neurons[neuron_index].value = Some(value);
     }
 }

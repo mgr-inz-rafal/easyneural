@@ -23,21 +23,39 @@ impl Neuron {
     }
 
     pub(crate) fn fire(index: usize, neuron_repository: &mut Vec<Neuron>) -> f64 {
-        let sum = 0.0;
+        let mut sum = 0.0;
+
+        // TODO: This solution with two separate loops is a dirty hack, rethink this
         for input in &mut neuron_repository[index].inputs {
             match input {
-                InputKind::Axon(axon) => {
-                    let my_weight = axon.get_weight();
-                    println!("\t\tAxon: weight: {}, connecting_value: {}", my_weight, 0.0);
-                }
-                InputKind::Value(ref mut cb) => {
+                InputKind::Value(cb) => {
                     let my_value = (cb.as_mut().unwrap())();
                     println!("\t\tValue: {}", my_value);
+                    sum += my_value;
                 }
+                _ => {}
             }
         }
 
-        777777.7
+        for input in &neuron_repository[index].inputs {
+            match input {
+                InputKind::Axon(axon) => {
+                    let my_weight = axon.get_weight();
+                    let connecting_id = axon.get_id();
+                    let connecting_value = &neuron_repository[connecting_id].value;
+                    println!(
+                        "\t\tAxon: weight: {}, connecting_id: {}, connecting_value: {}",
+                        my_weight,
+                        connecting_id,
+                        connecting_value.unwrap()
+                    );
+                    sum += my_weight * connecting_value.unwrap();
+                }
+                _ => {}
+            }
+        }
+
+        sum
     }
 }
 
