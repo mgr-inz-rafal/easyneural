@@ -42,13 +42,14 @@ impl Network {
         });
     }
 
-    fn create_layers(&mut self, neurons_in_layers: &[usize]) {
+    fn create_layers(&mut self, neurons_in_layers: &[usize], bias: bool) {
         neurons_in_layers.iter().enumerate().for_each(|(index, _)| {
             self.layers.push(
                 LayerBuilder::new()
                     .with_neuron_repository(&mut self.neurons)
                     .with_neurons(neurons_in_layers[index])
                     .with_previous_layer(self.layers.last())
+                    .with_bias(bias)
                     .build(&mut self.toolbox.randomizer),
             );
         });
@@ -142,7 +143,7 @@ impl NetworkBuilder {
         network.neurons.push(Neuron::new());
         let neuron_buffer_address = &network.neurons[0] as *const _;
         network.neurons.clear();
-        network.create_layers(&self.neurons_in_layers);
+        network.create_layers(&self.neurons_in_layers, self.bias);
         network.setup_inputs(self.inputs.as_ref().unwrap().to_vec());
         assert_eq!(
             &network.neurons[0] as *const _, neuron_buffer_address,

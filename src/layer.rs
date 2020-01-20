@@ -18,6 +18,7 @@ pub(crate) struct LayerBuilder<'a> {
     number_of_neurons: Option<usize>,
     neuron_repository: Option<&'a mut Vec<Neuron>>,
     previous_layer: Option<&'a Layer>,
+    bias: bool,
 }
 
 impl<'a> LayerBuilder<'a> {
@@ -26,7 +27,13 @@ impl<'a> LayerBuilder<'a> {
             number_of_neurons: None,
             neuron_repository: None,
             previous_layer: None,
+            bias: false,
         }
+    }
+
+    pub fn with_bias(mut self, bias: bool) -> Self {
+        self.bias = bias;
+        self
     }
 
     pub fn with_neurons(mut self, numbner_of_neurons: usize) -> Self {
