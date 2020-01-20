@@ -1,4 +1,4 @@
-use super::neuron::{InputKind, Neuron, NeuronBuilder};
+use super::neuron::{Neuron, NeuronBuilder};
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]

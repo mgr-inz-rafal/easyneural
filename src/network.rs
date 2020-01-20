@@ -308,7 +308,7 @@ mod tests {
             .build();
 
         let serialized = serde_json::to_string(&network).unwrap();
-        println!("{}", serialized);
+        println!("{}", serialized); // TODO: Note to self - remove for release
 
         network.fire();
 

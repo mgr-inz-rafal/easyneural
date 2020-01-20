@@ -1,6 +1,6 @@
 use super::axon::Axon;
 use super::layer::Layer;
-use serde::{Deserialize, Serialize, Serializer};
+use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
 pub(crate) enum InputKind {
