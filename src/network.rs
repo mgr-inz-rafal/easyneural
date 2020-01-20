@@ -53,6 +53,25 @@ impl Network {
             );
         });
     }
+
+    pub fn fire(&mut self) {
+        for layer_id in 0..self.layers.len() {
+            println!("Firing layer {}", layer_id);
+            for neuron_index in 0..self.layers[layer_id].neurons.len() {
+                let neuron_id = self.layers[layer_id].neurons[neuron_index];
+                let new_value = Neuron::fire(neuron_id, &mut self.neurons);
+                self.set_neuron_value(neuron_id, new_value);
+            }
+        }
+    }
+
+    fn set_neuron_value(&mut self, neuron_index: usize, value: f64) {
+        println!(
+            "\t\t\tSetting neuron at index {} to {}",
+            neuron_index, value
+        );
+        self.neurons[neuron_index].value = Some(value);
+    }
 }
 
 fn default_randomizer() -> f64 {
@@ -270,5 +289,46 @@ mod tests {
                 index += 1;
             })
         });
+    }
+
+    #[test]
+    fn network_in_action() {
+        let input1 = || 17.54;
+        let input2 = || -9.214;
+
+        let mut current_random_value = 0.0;
+        let custom_random_number_generator = move || {
+            current_random_value += 1.0;
+            current_random_value
+        };
+        let mut network = NetworkBuilder::new()
+            .with_neurons_in_layers(vec![2, 2, 1])
+            .with_inputs(vec![input1, input2])
+            .with_custom_randomizer(custom_random_number_generator)
+            .build();
+
+        let serialized = serde_json::to_string(&network).unwrap();
+        println!("{}", serialized); // TODO: Note to self - remove for release
+
+        network.fire();
+
+        let mut neuron = network.neurons.iter_mut();
+        assert!(relative_eq!(neuron.next().unwrap().value.unwrap(), 17.54));
+        assert!(relative_eq!(neuron.next().unwrap().value.unwrap(), -9.214));
+        assert!(relative_eq!(
+            neuron.next().unwrap().value.unwrap(),
+            -0.8880000000000017
+        ));
+        assert!(relative_eq!(
+            neuron.next().unwrap().value.unwrap(),
+            15.763999999999996
+        ));
+        assert!(relative_eq!(
+            neuron.next().unwrap().value.unwrap(),
+            90.14399999999996
+        ));
+
+        let serialized = serde_json::to_string(&network).unwrap();
+        println!("{}", serialized);
     }
 }

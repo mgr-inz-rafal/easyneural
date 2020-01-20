@@ -1,6 +1,6 @@
 use super::axon::Axon;
 use super::layer::Layer;
-use serde::{Deserialize, Serialize, Serializer};
+use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
 pub(crate) enum InputKind {
@@ -11,11 +11,51 @@ pub(crate) enum InputKind {
 #[derive(Serialize, Deserialize)]
 pub(crate) struct Neuron {
     pub(crate) inputs: Vec<InputKind>,
+    pub(crate) value: Option<f64>,
 }
 
 impl Neuron {
     pub fn new() -> Neuron {
-        Neuron { inputs: Vec::new() }
+        Neuron {
+            inputs: Vec::new(),
+            value: None,
+        }
+    }
+
+    pub(crate) fn fire(index: usize, neuron_repository: &mut Vec<Neuron>) -> f64 {
+        let mut sum = 0.0;
+
+        // TODO: This solution with two separate loops is a dirty hack, rethink this
+        for input in &mut neuron_repository[index].inputs {
+            match input {
+                InputKind::Value(cb) => {
+                    let my_value = (cb.as_mut().unwrap())();
+                    println!("\t\tValue: {}", my_value);
+                    sum += my_value;
+                }
+                _ => {}
+            }
+        }
+
+        for input in &neuron_repository[index].inputs {
+            match input {
+                InputKind::Axon(axon) => {
+                    let my_weight = axon.get_weight();
+                    let connecting_id = axon.get_id();
+                    let connecting_value = &neuron_repository[connecting_id].value;
+                    println!(
+                        "\t\tAxon: weight: {}, connecting_id: {}, connecting_value: {}",
+                        my_weight,
+                        connecting_id,
+                        connecting_value.unwrap()
+                    );
+                    sum += my_weight * connecting_value.unwrap();
+                }
+                _ => {}
+            }
+        }
+
+        sum
     }
 }
 
