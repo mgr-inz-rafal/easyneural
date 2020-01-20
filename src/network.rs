@@ -82,6 +82,7 @@ pub struct NetworkBuilder {
     neurons_in_layers: Vec<usize>,
     inputs: Option<Vec<fn() -> f64>>,
     custom_randomizer: Option<Box<dyn FnMut() -> f64>>,
+    bias: bool,
 }
 
 impl NetworkBuilder {
@@ -90,7 +91,13 @@ impl NetworkBuilder {
             neurons_in_layers: Vec::new(),
             inputs: None,
             custom_randomizer: None,
+            bias: true,
         }
+    }
+
+    pub fn with_disabled_bias(mut self) -> Self {
+        self.bias = false;
+        self
     }
 
     pub fn with_neurons_in_layers(mut self, neurons_in_layers: Vec<usize>) -> Self {
@@ -155,10 +162,10 @@ mod tests {
         let input2 = || 2.2;
         let input3 = || 3.3;
 
-        // TODO: No need to be mutable, I presume
         let mut network = NetworkBuilder::new()
             .with_neurons_in_layers(vec![3, 2, 5, 2])
             .with_inputs(vec![input1, input2, input3])
+            .with_disabled_bias()
             .build();
 
         // Check number of layers
@@ -240,11 +247,11 @@ mod tests {
             17.2
         }
 
-        // TODO: No need to be mutable, I presume
         let mut network = NetworkBuilder::new()
             .with_neurons_in_layers(vec![2, 2, 1])
             .with_inputs(vec![input1, input2])
             .with_custom_randomizer(custom_randomizer)
+            .with_disabled_bias()
             .build();
 
         network.neurons.iter_mut().for_each(|neuron| {
@@ -274,6 +281,7 @@ mod tests {
             .with_neurons_in_layers(vec![2, 2, 1])
             .with_inputs(vec![input1, input2])
             .with_custom_randomizer(custom_random_number_generator)
+            .with_disabled_bias()
             .build();
 
         let mut index = 1;
@@ -305,6 +313,7 @@ mod tests {
             .with_neurons_in_layers(vec![2, 2, 1])
             .with_inputs(vec![input1, input2])
             .with_custom_randomizer(custom_random_number_generator)
+            .with_disabled_bias()
             .build();
 
         let serialized = serde_json::to_string(&network).unwrap();
@@ -330,5 +339,33 @@ mod tests {
 
         let serialized = serde_json::to_string(&network).unwrap();
         println!("{}", serialized);
+    }
+
+    #[test]
+    fn bias_neurons() {
+        let input1 = || 1.1;
+        let input2 = || 2.2;
+
+        fn custom_randomizer() -> f64 {
+            100.0
+        }
+
+        let mut network = NetworkBuilder::new()
+            .with_neurons_in_layers(vec![2, 2, 1])
+            .with_inputs(vec![input1, input2])
+            .with_custom_randomizer(custom_randomizer)
+            .build();
+
+        network.neurons.iter_mut().for_each(|neuron| {
+            neuron.inputs.iter_mut().for_each(|input| {
+                match input {
+                    InputKind::Value(cb) => {
+                        let value = cb.as_mut().unwrap()();
+                        assert!(relative_eq!(value, 1.1) || relative_eq!(value, 2.2))
+                    }
+                    InputKind::Axon(axon) => assert!(relative_eq!(axon.get_weight(), 100.0)),
+                };
+            })
+        })
     }
 }
