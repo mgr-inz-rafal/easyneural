@@ -59,15 +59,20 @@ impl<'a> LayerBuilder<'a> {
             if let Some(number_of_neurons) = self.number_of_neurons;
             if let Some(ref mut neuron_repository) = self.neuron_repository;
             then {
+                let mut new_neuron_id = None;
                 (0..number_of_neurons).for_each(|_| {
                     neuron_repository.push(
                         NeuronBuilder::new()
                             .with_connection_to_layer(previous_layer)
                             .build(&mut randomizer),
                     );
-                    let new_neuron = neuron_repository.len() - 1;
-                    layer.neurons.push(new_neuron);
+                    new_neuron_id = Some(neuron_repository.len() - 1);
+                    layer.neurons.push(new_neuron_id.unwrap());
                 });
+                if self.bias {
+                    // TODO: Do not add bias neuron to the last layer
+                    neuron_repository[new_neuron_id.unwrap()].fixed_value = Some(1.0);
+                }
             }
         }
         layer
