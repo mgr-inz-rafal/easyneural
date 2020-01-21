@@ -116,7 +116,7 @@ impl NetworkBuilder {
         self
     }
 
-    pub fn build(self) -> Network {
+    pub fn build(mut self) -> Network {
         assert!(
             self.neurons_in_layers.len() > 1,
             "Network must have at least 2 layers"
@@ -130,6 +130,12 @@ impl NetworkBuilder {
             self.inputs.as_ref().unwrap().len(),
             "Number of neurons on the first layer must be the same as number of inputs"
         );
+
+        if self.bias {
+            for n in &mut self.neurons_in_layers {
+                *n += 1;
+            }
+        }
 
         let mut network = Network::new(
             self.neurons_in_layers.len(),
@@ -367,6 +373,8 @@ mod tests {
                     InputKind::Axon(axon) => assert!(relative_eq!(axon.get_weight(), 100.0)),
                 };
             })
-        })
+        });
+        let serialized = serde_json::to_string(&network).unwrap();
+        println!("{}", serialized); // TODO: Note to self - remove for release
     }
 }
