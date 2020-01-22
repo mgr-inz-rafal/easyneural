@@ -70,7 +70,6 @@ impl<'a> LayerBuilder<'a> {
                     layer.neurons.push(new_neuron_id.unwrap());
                 });
                 if self.bias {
-                    // TODO: Do not add bias neuron to the last layer
                     neuron_repository[new_neuron_id.unwrap()].fixed_value = Some(1.0);
                 }
             }
