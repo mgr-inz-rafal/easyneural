@@ -49,7 +49,11 @@ impl Network {
                     .with_neuron_repository(&mut self.neurons)
                     .with_neurons(neurons_in_layers[index])
                     .with_previous_layer(self.layers.last())
-                    .with_bias(bias)
+                    .with_bias(if index == neurons_in_layers.len() - 1 {
+                        false
+                    } else {
+                        bias
+                    })
                     .build(&mut self.toolbox.randomizer),
             );
         });
@@ -132,8 +136,8 @@ impl NetworkBuilder {
         );
 
         if self.bias {
-            for n in &mut self.neurons_in_layers {
-                *n += 1;
+            for i in 0..self.neurons_in_layers.len() - 1 {
+                self.neurons_in_layers[i] += 1;
             }
         }
 
