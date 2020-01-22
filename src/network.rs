@@ -361,23 +361,22 @@ mod tests {
             100.0
         }
 
-        let mut network = NetworkBuilder::new()
-            .with_neurons_in_layers(vec![2, 2, 1])
+        //let neuron_count = [2, 3, 1];
+        let network = NetworkBuilder::new()
+            .with_neurons_in_layers(vec![2, 3, 1]) // TODO: Pass array instead of vector here
             .with_inputs(vec![input1, input2])
             .with_custom_randomizer(custom_randomizer)
             .build();
 
-        network.neurons.iter_mut().for_each(|neuron| {
-            neuron.inputs.iter_mut().for_each(|input| {
-                match input {
-                    InputKind::Value(cb) => {
-                        let value = cb.as_mut().unwrap()();
-                        assert!(relative_eq!(value, 1.1) || relative_eq!(value, 2.2))
-                    }
-                    InputKind::Axon(axon) => assert!(relative_eq!(axon.get_weight(), 100.0)),
-                };
-            })
-        });
+        // Validate that each layer but last has one more neuron
+        let expected_neuron_count = [3, 4, 1];
+        network
+            .layers
+            .iter()
+            .map(|neuron_count| neuron_count.neurons.len())
+            .zip(expected_neuron_count.iter())
+            .for_each(|neuron_count| assert_eq!(neuron_count.0, *neuron_count.1));
+
         let serialized = serde_json::to_string(&network).unwrap();
         println!("{}", serialized); // TODO: Note to self - remove for release
     }
