@@ -105,8 +105,8 @@ impl NetworkBuilder {
         self
     }
 
-    pub fn with_neurons_in_layers(mut self, neurons_in_layers: Vec<usize>) -> Self {
-        self.neurons_in_layers = neurons_in_layers;
+    pub fn with_neurons_in_layers(mut self, neurons_in_layers: &[usize]) -> Self {
+        self.neurons_in_layers.extend_from_slice(neurons_in_layers);
         self
     }
 
@@ -174,7 +174,7 @@ mod tests {
         let input3 = || 3.3;
 
         let mut network = NetworkBuilder::new()
-            .with_neurons_in_layers(vec![3, 2, 5, 2])
+            .with_neurons_in_layers(&[3, 2, 5, 2])
             .with_inputs(vec![input1, input2, input3])
             .with_disabled_bias()
             .build();
@@ -259,7 +259,7 @@ mod tests {
         }
 
         let mut network = NetworkBuilder::new()
-            .with_neurons_in_layers(vec![2, 2, 1])
+            .with_neurons_in_layers(&[2, 2, 1])
             .with_inputs(vec![input1, input2])
             .with_custom_randomizer(custom_randomizer)
             .with_disabled_bias()
@@ -289,7 +289,7 @@ mod tests {
             current_random_value
         };
         let mut network = NetworkBuilder::new()
-            .with_neurons_in_layers(vec![2, 2, 1])
+            .with_neurons_in_layers(&[2, 2, 1])
             .with_inputs(vec![input1, input2])
             .with_custom_randomizer(custom_random_number_generator)
             .with_disabled_bias()
@@ -321,7 +321,7 @@ mod tests {
             current_random_value
         };
         let mut network = NetworkBuilder::new()
-            .with_neurons_in_layers(vec![2, 2, 1])
+            .with_neurons_in_layers(&[2, 2, 1])
             .with_inputs(vec![input1, input2])
             .with_custom_randomizer(custom_random_number_generator)
             .with_disabled_bias()
@@ -357,9 +357,9 @@ mod tests {
         let input1 = || 1.1;
         let input2 = || 2.2;
 
-        //let neuron_count = [2, 3, 1];
+        let neuron_count = [2, 3, 1];
         let mut network = NetworkBuilder::new()
-            .with_neurons_in_layers(vec![2, 3, 1]) // TODO: Pass array instead of vector here
+            .with_neurons_in_layers(&neuron_count)
             .with_inputs(vec![input1, input2])
             .build();
 
