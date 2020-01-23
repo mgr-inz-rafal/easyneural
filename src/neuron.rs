@@ -16,6 +16,13 @@ pub(crate) struct Neuron {
 }
 
 impl Neuron {
+    pub(crate) fn get_value(&self) -> f64 {
+        if let Some(value) = self.fixed_value {
+            return value;
+        }
+        self.value.unwrap()
+    }
+
     pub fn new() -> Neuron {
         Neuron {
             inputs: Vec::new(),
