@@ -1,4 +1,4 @@
-use super::neuron::{Neuron, NeuronBuilder};
+use super::neuron::{Neuron, NeuronBuilder, Valued};
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
@@ -16,7 +16,7 @@ impl Layer {
 
 pub(crate) struct LayerBuilder<'a> {
     number_of_neurons: Option<usize>,
-    neuron_repository: Option<&'a mut Vec<Neuron>>,
+    neuron_repository: Option<&'a mut Vec<Box<dyn Valued>>>,
     previous_layer: Option<&'a Layer>,
     bias: bool,
 }
@@ -41,7 +41,10 @@ impl<'a> LayerBuilder<'a> {
         self
     }
 
-    pub fn with_neuron_repository(mut self, neuron_repository: &'a mut Vec<Neuron>) -> Self {
+    pub fn with_neuron_repository(
+        mut self,
+        neuron_repository: &'a mut Vec<Box<dyn Valued>>,
+    ) -> Self {
         self.neuron_repository = Some(neuron_repository);
         self
     }
@@ -62,15 +65,15 @@ impl<'a> LayerBuilder<'a> {
                 let mut new_neuron_id = None;
                 (0..number_of_neurons).for_each(|_| {
                     neuron_repository.push(
-                        NeuronBuilder::new()
+                        Box::new(NeuronBuilder::new()
                             .with_connection_to_layer(previous_layer)
-                            .build(&mut randomizer),
+                            .build(&mut randomizer)),
                     );
                     new_neuron_id = Some(neuron_repository.len() - 1);
                     layer.neurons.push(new_neuron_id.unwrap());
                 });
                 if self.bias {
-                    neuron_repository[new_neuron_id.unwrap()].fixed_value = Some(1.0);
+                    neuron_repository[new_neuron_id.unwrap()].set_fixed_value(1.0);
                 }
             }
         }
