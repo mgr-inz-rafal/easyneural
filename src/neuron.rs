@@ -21,7 +21,7 @@ pub(crate) trait NeuronKind {
     fn get_fixed_value(&self) -> f64;
     fn set_fixed_value(&mut self, val: f64);
     fn get_inputs(&self) -> Option<&Vec<InputKind>>;
-    fn get_inputs_mut(&mut self) -> &mut Vec<InputKind>;
+    fn get_inputs_mut(&mut self) -> Option<&mut Vec<InputKind>>;
     fn is_fixed_value(&self) -> bool;
 }
 
@@ -48,8 +48,8 @@ impl NeuronKind for Neuron {
         Some(&self.inputs)
     }
 
-    fn get_inputs_mut(&mut self) -> &mut Vec<InputKind> {
-        &mut self.inputs
+    fn get_inputs_mut(&mut self) -> Option<&mut Vec<InputKind>> {
+        Some(&mut self.inputs)
     }
 
     fn set_value(&mut self, val: f64) {
@@ -85,14 +85,16 @@ impl Neuron {
         let mut sum = 0.0;
 
         // TODO: This solution with two separate loops is a dirty hack, rethink this
-        for input in neuron_repository[index].get_inputs_mut() {
-            match input {
-                InputKind::Value(cb) => {
-                    let my_value = (cb.as_mut().unwrap())();
-                    println!("\t\tValue: {}", my_value);
-                    sum += my_value;
+        if let Some(inputs) = neuron_repository[index].get_inputs_mut() {
+            for input in inputs {
+                match input {
+                    InputKind::Value(cb) => {
+                        let my_value = (cb.as_mut().unwrap())();
+                        println!("\t\tValue: {}", my_value);
+                        sum += my_value;
+                    }
+                    _ => {}
                 }
-                _ => {}
             }
         }
 

@@ -39,9 +39,9 @@ impl Network {
             let neuron_id = self.layers[0].neurons[index];
             let neuron = &mut self.neurons[neuron_id];
             assert!(neuron.get_inputs().unwrap().is_empty());
-            neuron
-                .get_inputs_mut()
-                .push(InputKind::Value(Some(Box::new(*input))));
+            if let Some(inputs) = neuron.get_inputs_mut() {
+                inputs.push(InputKind::Value(Some(Box::new(*input))));
+            }
         });
     }
 
@@ -190,17 +190,26 @@ mod tests {
         let mut neuron_iterator = first_layer.neurons.iter();
 
         // TODO: Remove the copy&pasted boilerplate
-        match &mut network.neurons[*neuron_iterator.next().unwrap()].get_inputs_mut()[0] {
+        match &mut network.neurons[*neuron_iterator.next().unwrap()]
+            .get_inputs_mut()
+            .unwrap()[0]
+        {
             InputKind::Value(cb) => assert!(relative_eq!(cb.as_mut().unwrap()(), 1.1)),
             _ => {}
         }
 
-        match &mut network.neurons[*neuron_iterator.next().unwrap()].get_inputs_mut()[0] {
+        match &mut network.neurons[*neuron_iterator.next().unwrap()]
+            .get_inputs_mut()
+            .unwrap()[0]
+        {
             InputKind::Value(cb) => assert!(relative_eq!(cb.as_mut().unwrap()(), 2.2)),
             _ => {}
         }
 
-        match &mut network.neurons[*neuron_iterator.next().unwrap()].get_inputs_mut()[0] {
+        match &mut network.neurons[*neuron_iterator.next().unwrap()]
+            .get_inputs_mut()
+            .unwrap()[0]
+        {
             InputKind::Value(cb) => assert!(relative_eq!(cb.as_mut().unwrap()(), 3.3)),
             _ => {}
         }
@@ -271,15 +280,19 @@ mod tests {
             .build();
 
         network.neurons.iter_mut().for_each(|neuron| {
-            neuron.get_inputs_mut().iter_mut().for_each(|input| {
-                match input {
-                    InputKind::Value(cb) => {
-                        let value = cb.as_mut().unwrap()();
-                        assert!(relative_eq!(value, 1.1) || relative_eq!(value, 2.2))
-                    }
-                    InputKind::Axon(axon) => assert!(relative_eq!(axon.get_weight(), 17.2)),
-                };
-            })
+            neuron
+                .get_inputs_mut()
+                .unwrap()
+                .iter_mut()
+                .for_each(|input| {
+                    match input {
+                        InputKind::Value(cb) => {
+                            let value = cb.as_mut().unwrap()();
+                            assert!(relative_eq!(value, 1.1) || relative_eq!(value, 2.2))
+                        }
+                        InputKind::Axon(axon) => assert!(relative_eq!(axon.get_weight(), 17.2)),
+                    };
+                })
         })
     }
 
@@ -302,16 +315,22 @@ mod tests {
 
         let mut index = 1;
         network.neurons.iter_mut().skip(2).for_each(|neuron| {
-            neuron.get_inputs_mut().iter_mut().for_each(|input| {
-                match input {
-                    InputKind::Value(cb) => {
-                        let value = cb.as_mut().unwrap()();
-                        assert!(relative_eq!(value, 1.1) || relative_eq!(value, 2.2))
-                    }
-                    InputKind::Axon(axon) => assert!(relative_eq!(axon.get_weight(), index as f64)),
-                };
-                index += 1;
-            })
+            neuron
+                .get_inputs_mut()
+                .unwrap()
+                .iter_mut()
+                .for_each(|input| {
+                    match input {
+                        InputKind::Value(cb) => {
+                            let value = cb.as_mut().unwrap()();
+                            assert!(relative_eq!(value, 1.1) || relative_eq!(value, 2.2))
+                        }
+                        InputKind::Axon(axon) => {
+                            assert!(relative_eq!(axon.get_weight(), index as f64))
+                        }
+                    };
+                    index += 1;
+                })
         });
     }
 
