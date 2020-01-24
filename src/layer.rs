@@ -64,16 +64,22 @@ impl<'a> LayerBuilder<'a> {
             then {
                 let mut new_neuron_id = None;
                 (0..number_of_neurons).for_each(|_| {
+                    //println!("Pushing normal neuron");
                     neuron_repository.push(
-                        Box::new(NeuronBuilder::new()
+                        NeuronBuilder::new()
                             .with_connection_to_layer(previous_layer)
-                            .build(&mut randomizer)),
+                            .build(&mut randomizer),
                     );
                     new_neuron_id = Some(neuron_repository.len() - 1);
                     layer.neurons.push(new_neuron_id.unwrap());
                 });
                 if self.bias {
-                    neuron_repository[new_neuron_id.unwrap()].set_fixed_value(1.0);
+                    //println!("Pushing BIAS neuron");
+                    neuron_repository.push(NeuronBuilder::new()
+                        .make_bias()
+                        .build(&mut randomizer));
+                    new_neuron_id = Some(neuron_repository.len() - 1);// TODO: Copy&pasted from the closure above
+                    layer.neurons.push(new_neuron_id.unwrap());
                 }
             }
         }

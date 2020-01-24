@@ -68,7 +68,9 @@ impl Network {
             for neuron_index in 0..self.layers[layer_id].neurons.len() {
                 let neuron_id = self.layers[layer_id].neurons[neuron_index];
                 let new_value = Neuron::fire(neuron_id, &mut self.neurons);
-                self.set_neuron_value(neuron_id, new_value);
+                if let Some(new_value) = new_value {
+                    self.set_neuron_value(neuron_id, new_value);
+                }
             }
         }
     }
@@ -138,12 +140,7 @@ impl NetworkBuilder {
             "Number of neurons on the first layer must be the same as number of inputs"
         );
 
-        if self.bias {
-            for i in 0..self.neurons_in_layers.len() - 1 {
-                self.neurons_in_layers[i] += 1;
-            }
-        }
-
+        // TODO: Allow optional place for bias neurons
         let mut network = Network::new(
             self.neurons_in_layers.len(),
             self.neurons_in_layers.iter().sum(),
@@ -158,10 +155,12 @@ impl NetworkBuilder {
         network.neurons.clear();
         network.create_layers(&self.neurons_in_layers, self.bias);
         network.setup_inputs(self.inputs.as_ref().unwrap().to_vec());
+        /*
         assert_eq!(
             &network.neurons[0] as *const _, neuron_buffer_address,
             "Reallocation of the neuron buffer detected"
         );
+        */
 
         network
     }

@@ -15,11 +15,33 @@ pub(crate) struct Neuron {
     pub(crate) fixed_value: Option<f64>,
 }
 
+pub(crate) struct BiasNeuron {}
+
+impl NeuronKind for BiasNeuron {
+    fn is_fixed_value(&self) -> bool {
+        true
+    }
+
+    fn get_value(&self) -> f64 {
+        1.0
+    }
+
+    fn get_inputs(&self) -> Option<&Vec<InputKind>> {
+        None
+    }
+
+    fn get_inputs_mut(&mut self) -> Option<&mut Vec<InputKind>> {
+        None
+    }
+
+    fn set_value(&mut self, _: f64) {
+        panic!("Cannot set value of the bias neuron")
+    }
+}
+
 pub(crate) trait NeuronKind {
     fn get_value(&self) -> f64;
     fn set_value(&mut self, val: f64);
-    fn get_fixed_value(&self) -> f64;
-    fn set_fixed_value(&mut self, val: f64);
     fn get_inputs(&self) -> Option<&Vec<InputKind>>;
     fn get_inputs_mut(&mut self) -> Option<&mut Vec<InputKind>>;
     fn is_fixed_value(&self) -> bool;
@@ -37,13 +59,6 @@ impl NeuronKind for Neuron {
         panic!("Asking for a value of neuron without a value calculated");
     }
 
-    fn get_fixed_value(&self) -> f64 {
-        if let Some(value) = self.fixed_value {
-            return value;
-        }
-        panic!("Asking for a fixed-value of neuron without a value calculated");
-    }
-
     fn get_inputs(&self) -> Option<&Vec<InputKind>> {
         Some(&self.inputs)
     }
@@ -55,9 +70,11 @@ impl NeuronKind for Neuron {
     fn set_value(&mut self, val: f64) {
         self.value = Some(val);
     }
+}
 
-    fn set_fixed_value(&mut self, val: f64) {
-        self.fixed_value = Some(val);
+impl BiasNeuron {
+    pub fn new() -> BiasNeuron {
+        BiasNeuron {}
     }
 }
 
@@ -77,9 +94,12 @@ impl Neuron {
         }
     }
 
-    pub(crate) fn fire(index: usize, neuron_repository: &mut Vec<Box<dyn NeuronKind>>) -> f64 {
+    pub(crate) fn fire(
+        index: usize,
+        neuron_repository: &mut Vec<Box<dyn NeuronKind>>,
+    ) -> Option<f64> {
         if neuron_repository[index].is_fixed_value() {
-            return neuron_repository[index].get_fixed_value();
+            return None;
         }
 
         let mut sum = 0.0;
@@ -116,17 +136,21 @@ impl Neuron {
             }
         }
 
-        sum
+        Some(sum)
     }
 }
 
 pub(crate) struct NeuronBuilder<'a> {
     layer: Option<&'a Layer>,
+    bias: Option<bool>,
 }
 
 impl<'a> NeuronBuilder<'a> {
     pub fn new() -> NeuronBuilder<'a> {
-        NeuronBuilder { layer: None }
+        NeuronBuilder {
+            layer: None,
+            bias: None,
+        }
     }
 
     pub fn with_connection_to_layer(mut self, layer: Option<&'a Layer>) -> Self {
@@ -134,18 +158,38 @@ impl<'a> NeuronBuilder<'a> {
         self
     }
 
-    #[allow(clippy::borrowed_box)]
-    pub fn build(self, randomizer: &mut Box<(dyn FnMut() -> f64 + 'static)>) -> Neuron {
-        let mut neuron = Neuron::new();
-        if let Some(layer) = self.layer.as_ref() {
-            {
-                layer.neurons.iter().for_each(|n| {
-                    neuron
-                        .inputs
-                        .push(InputKind::Axon(Axon::new(*n, (randomizer)())));
-                });
-            }
+    pub fn make_bias(mut self) -> Self {
+        self.bias = Some(true);
+        self
+    }
+
+    fn is_bias(&self) -> bool {
+        match self.bias {
+            Some(bias) => bias,
+            None => false,
         }
-        neuron
+    }
+
+    #[allow(clippy::borrowed_box)]
+    pub fn build(
+        self,
+        randomizer: &mut Box<(dyn FnMut() -> f64 + 'static)>,
+    ) -> Box<dyn NeuronKind> {
+        if self.is_bias() {
+            let mut neuron = BiasNeuron::new();
+            return Box::new(neuron);
+        } else {
+            let mut neuron = Neuron::new();
+            if let Some(layer) = self.layer.as_ref() {
+                {
+                    layer.neurons.iter().for_each(|n| {
+                        neuron
+                            .inputs
+                            .push(InputKind::Axon(Axon::new(*n, (randomizer)())));
+                    });
+                }
+            }
+            return Box::new(neuron);
+        }
     }
 }
