@@ -1,5 +1,8 @@
+use super::network::NeuronRepository;
 use super::neuron::{Neuron, NeuronBuilder, NeuronKind};
 use serde::{Deserialize, Serialize};
+use std::cell::RefCell;
+use std::rc::Rc;
 
 #[derive(Serialize, Deserialize)]
 pub(crate) struct Layer {
@@ -16,7 +19,7 @@ impl Layer {
 
 pub(crate) struct LayerBuilder<'a> {
     number_of_neurons: Option<usize>,
-    neuron_repository: Option<&'a mut Vec<Box<dyn NeuronKind>>>,
+    neuron_repository: Option<&'a Rc<RefCell<NeuronRepository>>>,
     previous_layer: Option<&'a Layer>,
     bias: bool,
 }
@@ -43,7 +46,7 @@ impl<'a> LayerBuilder<'a> {
 
     pub fn with_neuron_repository(
         mut self,
-        neuron_repository: &'a mut Vec<Box<dyn NeuronKind>>,
+        neuron_repository: &'a Rc<RefCell<NeuronRepository>>,
     ) -> Self {
         self.neuron_repository = Some(neuron_repository);
         self
@@ -65,20 +68,20 @@ impl<'a> LayerBuilder<'a> {
                 let mut new_neuron_id = None;
                 (0..number_of_neurons).for_each(|_| {
                     //println!("Pushing normal neuron");
-                    neuron_repository.push(
+                    (*(*neuron_repository).borrow_mut()).neurons.push(
                         NeuronBuilder::new()
                             .with_connection_to_layer(previous_layer)
                             .build(&mut randomizer),
                     );
-                    new_neuron_id = Some(neuron_repository.len() - 1);
+                    new_neuron_id = Some((*(*neuron_repository).borrow()).neurons.len() - 1);
                     layer.neurons.push(new_neuron_id.unwrap());
                 });
                 if self.bias {
                     //println!("Pushing BIAS neuron");
-                    neuron_repository.push(NeuronBuilder::new()
+                    (*(*neuron_repository).borrow_mut()).neurons.push(NeuronBuilder::new()
                         .make_bias()
                         .build(&mut randomizer));
-                    new_neuron_id = Some(neuron_repository.len() - 1);// TODO: Copy&pasted from the closure above
+                    new_neuron_id = Some((*(*neuron_repository).borrow()).neurons.len() - 1);// TODO: Copy&pasted from the closure
                     layer.neurons.push(new_neuron_id.unwrap());
                 }
             }

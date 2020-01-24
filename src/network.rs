@@ -2,6 +2,8 @@ use super::layer::{Layer, LayerBuilder};
 use super::neuron::{InputKind, Neuron, NeuronKind};
 use rand_distr::Distribution;
 use serde::{Deserialize, Serialize};
+use std::cell::RefCell;
+use std::rc::Rc;
 
 struct NetworkToolbox {
     randomizer: Box<dyn FnMut() -> f64>,
@@ -15,19 +17,32 @@ impl Default for NetworkToolbox {
     }
 }
 
+#[derive(Default)]
+pub(crate) struct NeuronRepository {
+    pub(crate) neurons: Vec<Box<dyn NeuronKind>>,
+}
+
+impl NeuronRepository {
+    fn new(neuron_count: usize) -> NeuronRepository {
+        NeuronRepository {
+            neurons: Vec::with_capacity(neuron_count),
+        }
+    }
+}
+
 #[derive(Serialize, Deserialize)]
 pub struct Network {
     #[serde(skip_deserializing, skip_serializing)]
-    neurons: Vec<Box<dyn NeuronKind>>,
+    neurons: Rc<RefCell<NeuronRepository>>,
     layers: Vec<Layer>,
     #[serde(skip_deserializing, skip_serializing)]
     toolbox: NetworkToolbox,
 }
 
 impl Network {
-    fn new(layer_count: usize, neuron_count: usize) -> Network {
+    fn new(layer_count: usize, neurons: Rc<RefCell<NeuronRepository>>) -> Network {
         Network {
-            neurons: Vec::with_capacity(neuron_count),
+            neurons: neurons,
             layers: Vec::with_capacity(layer_count),
             toolbox: Default::default(),
         }
@@ -37,7 +52,8 @@ impl Network {
     fn setup_inputs(&mut self, inputs: Vec<fn() -> f64>) {
         inputs.iter().enumerate().for_each(|(index, input)| {
             let neuron_id = self.layers[0].neurons[index];
-            let neuron = &mut self.neurons[neuron_id];
+            //let neuron = &mut self.neurons[neuron_id];
+            let neuron = &mut (*(*self.neurons).borrow_mut()).neurons[neuron_id];
             assert!(neuron.get_inputs().unwrap().is_empty());
             if let Some(inputs) = neuron.get_inputs_mut() {
                 inputs.push(InputKind::Value(Some(Box::new(*input))));
@@ -46,10 +62,26 @@ impl Network {
     }
 
     fn create_layers(&mut self, neurons_in_layers: &[usize], bias: bool) {
+        for index in 0..neurons_in_layers.len() {
+            self.layers.push(
+                LayerBuilder::new()
+                    .with_neuron_repository(&self.neurons)
+                    .with_neurons(neurons_in_layers[index])
+                    .with_previous_layer(self.layers.last())
+                    .with_bias(if index == neurons_in_layers.len() - 1 {
+                        false
+                    } else {
+                        bias
+                    })
+                    .build(&mut self.toolbox.randomizer),
+            );
+        }
+
+        /*
         neurons_in_layers.iter().enumerate().for_each(|(index, _)| {
             self.layers.push(
                 LayerBuilder::new()
-                    .with_neuron_repository(&mut self.neurons)
+                    .with_neuron_repository(self.neurons)
                     .with_neurons(neurons_in_layers[index])
                     .with_previous_layer(self.layers.last())
                     .with_bias(if index == neurons_in_layers.len() - 1 {
@@ -60,17 +92,22 @@ impl Network {
                     .build(&mut self.toolbox.randomizer),
             );
         });
+        */
     }
 
-    pub fn fire(&mut self) {
+    pub fn fire(&self) {
         for layer_id in 0..self.layers.len() {
             println!("Firing layer {}", layer_id);
             for neuron_index in 0..self.layers[layer_id].neurons.len() {
-                let neuron_id = self.layers[layer_id].neurons[neuron_index];
-                let new_value = Neuron::fire(neuron_id, &mut self.neurons);
+                let x = Rc::new(RefCell::new(&self.neurons));
+                (*(*self.neurons).borrow_mut()).neurons[neuron_index].fire(&self.neurons);
+
+                //let new_value = self.neurons[neuron_id].fire(neuron_id, &mut self.neurons);
+                /*
                 if let Some(new_value) = new_value {
                     self.set_neuron_value(neuron_id, new_value);
                 }
+                */
             }
         }
     }
@@ -80,7 +117,7 @@ impl Network {
             "\t\t\tSetting neuron at index {} to {}",
             neuron_index, value
         );
-        self.neurons[neuron_index].set_value(value);
+        (*(*self.neurons).borrow_mut()).neurons[neuron_index].set_value(value);
     }
 }
 
@@ -140,19 +177,18 @@ impl NetworkBuilder {
             "Number of neurons on the first layer must be the same as number of inputs"
         );
 
+        let neurep = Rc::new(RefCell::new(NeuronRepository::new(100)));
+
         // TODO: Allow optional place for bias neurons
-        let mut network = Network::new(
-            self.neurons_in_layers.len(),
-            self.neurons_in_layers.iter().sum(),
-        );
+        let mut network = Network::new(self.neurons_in_layers.len(), neurep);
 
         if let Some(custom_randomizer) = self.custom_randomizer {
             network.toolbox.randomizer = custom_randomizer;
         }
 
-        network.neurons.push(Box::new(Neuron::new()));
-        let neuron_buffer_address = &network.neurons[0] as *const _;
-        network.neurons.clear();
+        //network.neurons.push(Box::new(Neuron::new()));
+        //let neuron_buffer_address = &network.neurons[0] as *const _;
+        //network.neurons.clear();
         network.create_layers(&self.neurons_in_layers, self.bias);
         network.setup_inputs(self.inputs.as_ref().unwrap().to_vec());
         /*
@@ -262,6 +298,7 @@ mod tests {
         });
     }
 
+    /*
     #[test]
     fn custom_randomizer_as_funtion() {
         let input1 = || 1.1;
@@ -408,4 +445,5 @@ mod tests {
         let serialized = serde_json::to_string(&network).unwrap();
         println!("{}", serialized); // TODO: Note to self - remove for release
     }
+    */
 }

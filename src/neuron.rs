@@ -1,6 +1,9 @@
 use super::axon::Axon;
 use super::layer::Layer;
+use super::network::NeuronRepository;
 use serde::{Deserialize, Serialize};
+use std::cell::RefCell;
+use std::rc::Rc;
 
 #[derive(Serialize, Deserialize)]
 pub(crate) enum InputKind {
@@ -12,16 +15,11 @@ pub(crate) enum InputKind {
 pub(crate) struct Neuron {
     pub(crate) inputs: Vec<InputKind>,
     pub(crate) value: Option<f64>,
-    pub(crate) fixed_value: Option<f64>,
 }
 
 pub(crate) struct BiasNeuron {}
 
 impl NeuronKind for BiasNeuron {
-    fn is_fixed_value(&self) -> bool {
-        true
-    }
-
     fn get_value(&self) -> f64 {
         1.0
     }
@@ -37,6 +35,10 @@ impl NeuronKind for BiasNeuron {
     fn set_value(&mut self, _: f64) {
         panic!("Cannot set value of the bias neuron")
     }
+
+    fn fire(&mut self, neuron_repository: &Rc<RefCell<NeuronRepository>>) -> Option<f64> {
+        None
+    } // Bias neurons do not fire
 }
 
 pub(crate) trait NeuronKind {
@@ -44,14 +46,10 @@ pub(crate) trait NeuronKind {
     fn set_value(&mut self, val: f64);
     fn get_inputs(&self) -> Option<&Vec<InputKind>>;
     fn get_inputs_mut(&mut self) -> Option<&mut Vec<InputKind>>;
-    fn is_fixed_value(&self) -> bool;
+    fn fire(&mut self, neuron_repository: &Rc<RefCell<NeuronRepository>>) -> Option<f64>;
 }
 
 impl NeuronKind for Neuron {
-    fn is_fixed_value(&self) -> bool {
-        self.fixed_value.is_some()
-    }
-
     fn get_value(&self) -> f64 {
         if let Some(value) = self.value {
             return value;
@@ -70,6 +68,45 @@ impl NeuronKind for Neuron {
     fn set_value(&mut self, val: f64) {
         self.value = Some(val);
     }
+
+    fn fire(&mut self, neuron_repository: &Rc<RefCell<NeuronRepository>>) -> Option<f64> {
+        let mut sum = 0.0;
+
+        // TODO: This solution with two separate loops is a dirty hack, rethink this
+        //        if let Some(inputs) = (*neuron_repository).borrow_mut()[index].get_inputs_mut() {
+        for input in &mut self.inputs {
+            match input {
+                InputKind::Value(cb) => {
+                    let my_value = (cb.as_mut().unwrap())();
+                    println!("\t\tValue: {}", my_value);
+                    sum += my_value;
+                }
+                _ => {}
+            }
+        }
+        //      }
+
+        //if let Some(inputs) = neuron_repository[index].get_inputs() {
+        for input in &self.inputs {
+            match input {
+                InputKind::Axon(axon) => {
+                    let my_weight = axon.get_weight();
+                    let connecting_id = axon.get_id();
+                    let connecting_value =
+                        (*(*neuron_repository).borrow()).neurons[connecting_id].get_value();
+                    println!(
+                        "\t\tAxon: weight: {}, connecting_id: {}, connecting_value: {}",
+                        my_weight, connecting_id, connecting_value
+                    );
+                    sum += my_weight * connecting_value;
+                }
+                _ => {}
+            }
+        }
+        //}
+
+        Some(sum)
+    }
 }
 
 impl BiasNeuron {
@@ -79,64 +116,11 @@ impl BiasNeuron {
 }
 
 impl Neuron {
-    // pub(crate) fn get_value(&self) -> f64 {
-    //     if let Some(value) = self.fixed_value {
-    //         return value;
-    //     }
-    //     self.value.unwrap()
-    // }
-
     pub fn new() -> Neuron {
         Neuron {
             inputs: Vec::new(),
             value: None,
-            fixed_value: None,
         }
-    }
-
-    pub(crate) fn fire(
-        index: usize,
-        neuron_repository: &mut Vec<Box<dyn NeuronKind>>,
-    ) -> Option<f64> {
-        if neuron_repository[index].is_fixed_value() {
-            return None;
-        }
-
-        let mut sum = 0.0;
-
-        // TODO: This solution with two separate loops is a dirty hack, rethink this
-        if let Some(inputs) = neuron_repository[index].get_inputs_mut() {
-            for input in inputs {
-                match input {
-                    InputKind::Value(cb) => {
-                        let my_value = (cb.as_mut().unwrap())();
-                        println!("\t\tValue: {}", my_value);
-                        sum += my_value;
-                    }
-                    _ => {}
-                }
-            }
-        }
-
-        if let Some(inputs) = neuron_repository[index].get_inputs() {
-            for input in inputs {
-                match input {
-                    InputKind::Axon(axon) => {
-                        let my_weight = axon.get_weight();
-                        let connecting_id = axon.get_id();
-                        let connecting_value = neuron_repository[connecting_id].get_value();
-                        println!(
-                            "\t\tAxon: weight: {}, connecting_id: {}, connecting_value: {}",
-                            my_weight, connecting_id, connecting_value
-                        );
-                        sum += my_weight * connecting_value;
-                    }
-                    _ => {}
-                }
-            }
-        }
-
-        Some(sum)
     }
 }
 
