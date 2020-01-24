@@ -15,7 +15,7 @@ pub(crate) struct Neuron {
     pub(crate) fixed_value: Option<f64>, // TODO: Add trait with get_value()
 }
 
-pub(crate) trait Valued {
+pub(crate) trait NeuronKind {
     fn get_value(&self) -> f64;
     fn set_value(&mut self, val: f64);
     fn get_fixed_value(&self) -> f64;
@@ -25,7 +25,7 @@ pub(crate) trait Valued {
     fn is_fixed_value(&self) -> bool;
 }
 
-impl Valued for Neuron {
+impl NeuronKind for Neuron {
     fn is_fixed_value(&self) -> bool {
         self.fixed_value.is_some()
     }
@@ -77,7 +77,7 @@ impl Neuron {
         }
     }
 
-    pub(crate) fn fire(index: usize, neuron_repository: &mut Vec<Box<dyn Valued>>) -> f64 {
+    pub(crate) fn fire(index: usize, neuron_repository: &mut Vec<Box<dyn NeuronKind>>) -> f64 {
         if neuron_repository[index].is_fixed_value() {
             return neuron_repository[index].get_fixed_value();
         }

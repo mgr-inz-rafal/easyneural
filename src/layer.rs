@@ -1,4 +1,4 @@
-use super::neuron::{Neuron, NeuronBuilder, Valued};
+use super::neuron::{Neuron, NeuronBuilder, NeuronKind};
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
@@ -16,7 +16,7 @@ impl Layer {
 
 pub(crate) struct LayerBuilder<'a> {
     number_of_neurons: Option<usize>,
-    neuron_repository: Option<&'a mut Vec<Box<dyn Valued>>>,
+    neuron_repository: Option<&'a mut Vec<Box<dyn NeuronKind>>>,
     previous_layer: Option<&'a Layer>,
     bias: bool,
 }
@@ -43,7 +43,7 @@ impl<'a> LayerBuilder<'a> {
 
     pub fn with_neuron_repository(
         mut self,
-        neuron_repository: &'a mut Vec<Box<dyn Valued>>,
+        neuron_repository: &'a mut Vec<Box<dyn NeuronKind>>,
     ) -> Self {
         self.neuron_repository = Some(neuron_repository);
         self

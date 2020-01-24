@@ -1,5 +1,5 @@
 use super::layer::{Layer, LayerBuilder};
-use super::neuron::{InputKind, Neuron, Valued};
+use super::neuron::{InputKind, Neuron, NeuronKind};
 use rand_distr::Distribution;
 use serde::{Deserialize, Serialize};
 
@@ -18,7 +18,7 @@ impl Default for NetworkToolbox {
 #[derive(Serialize, Deserialize)]
 pub struct Network {
     #[serde(skip_deserializing, skip_serializing)]
-    neurons: Vec<Box<dyn Valued>>,
+    neurons: Vec<Box<dyn NeuronKind>>,
     layers: Vec<Layer>,
     #[serde(skip_deserializing, skip_serializing)]
     toolbox: NetworkToolbox,
