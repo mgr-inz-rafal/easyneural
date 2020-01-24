@@ -12,7 +12,7 @@ pub(crate) enum InputKind {
 pub(crate) struct Neuron {
     pub(crate) inputs: Vec<InputKind>,
     pub(crate) value: Option<f64>,
-    pub(crate) fixed_value: Option<f64>, // TODO: Add trait with get_value()
+    pub(crate) fixed_value: Option<f64>,
 }
 
 pub(crate) trait NeuronKind {
@@ -20,7 +20,7 @@ pub(crate) trait NeuronKind {
     fn set_value(&mut self, val: f64);
     fn get_fixed_value(&self) -> f64;
     fn set_fixed_value(&mut self, val: f64);
-    fn get_inputs(&self) -> &Vec<InputKind>;
+    fn get_inputs(&self) -> Option<&Vec<InputKind>>;
     fn get_inputs_mut(&mut self) -> &mut Vec<InputKind>;
     fn is_fixed_value(&self) -> bool;
 }
@@ -44,8 +44,8 @@ impl NeuronKind for Neuron {
         panic!("Asking for a fixed-value of neuron without a value calculated");
     }
 
-    fn get_inputs(&self) -> &Vec<InputKind> {
-        &self.inputs
+    fn get_inputs(&self) -> Option<&Vec<InputKind>> {
+        Some(&self.inputs)
     }
 
     fn get_inputs_mut(&mut self) -> &mut Vec<InputKind> {
@@ -96,19 +96,21 @@ impl Neuron {
             }
         }
 
-        for input in neuron_repository[index].get_inputs() {
-            match input {
-                InputKind::Axon(axon) => {
-                    let my_weight = axon.get_weight();
-                    let connecting_id = axon.get_id();
-                    let connecting_value = neuron_repository[connecting_id].get_value();
-                    println!(
-                        "\t\tAxon: weight: {}, connecting_id: {}, connecting_value: {}",
-                        my_weight, connecting_id, connecting_value
-                    );
-                    sum += my_weight * connecting_value;
+        if let Some(inputs) = neuron_repository[index].get_inputs() {
+            for input in inputs {
+                match input {
+                    InputKind::Axon(axon) => {
+                        let my_weight = axon.get_weight();
+                        let connecting_id = axon.get_id();
+                        let connecting_value = neuron_repository[connecting_id].get_value();
+                        println!(
+                            "\t\tAxon: weight: {}, connecting_id: {}, connecting_value: {}",
+                            my_weight, connecting_id, connecting_value
+                        );
+                        sum += my_weight * connecting_value;
+                    }
+                    _ => {}
                 }
-                _ => {}
             }
         }
 

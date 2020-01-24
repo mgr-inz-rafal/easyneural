@@ -38,7 +38,7 @@ impl Network {
         inputs.iter().enumerate().for_each(|(index, input)| {
             let neuron_id = self.layers[0].neurons[index];
             let neuron = &mut self.neurons[neuron_id];
-            assert!(neuron.get_inputs().is_empty());
+            assert!(neuron.get_inputs().unwrap().is_empty());
             neuron
                 .get_inputs_mut()
                 .push(InputKind::Value(Some(Box::new(*input))));
@@ -217,7 +217,7 @@ mod tests {
             if i == 0 {
                 // Neurons on the first layer should have exactly one input
                 for neuron_id in &network.layers[i].neurons {
-                    assert_eq!(network.neurons[*neuron_id].get_inputs().len(), 1);
+                    assert_eq!(network.neurons[*neuron_id].get_inputs().unwrap().len(), 1);
                 }
             } else {
                 // Validate that each neuron on the current layer
@@ -225,7 +225,7 @@ mod tests {
                 let neuron_count_on_previous_layer = network.layers[i - 1].neurons.len();
                 for neuron_id in &network.layers[i].neurons {
                     assert_eq!(
-                        network.neurons[*neuron_id].get_inputs().len(),
+                        network.neurons[*neuron_id].get_inputs().unwrap().len(),
                         neuron_count_on_previous_layer
                     );
 
@@ -233,18 +233,20 @@ mod tests {
                     // - each axon really points to the neuron on previous layer
                     // - each axon points to different neuron
                     let mut processed_neurons = Vec::new();
-                    for input in network.neurons[*neuron_id].get_inputs() {
-                        if let InputKind::Axon(axon) = input {
-                            assert!(!processed_neurons.contains(&axon.get_id()));
-                            assert_eq!(
-                                network.layers[i - 1]
-                                    .neurons
-                                    .iter()
-                                    .filter(|x| *x == &axon.get_id())
-                                    .count(),
-                                1
-                            );
-                            processed_neurons.push(*neuron_id);
+                    if let Some(inputs) = network.neurons[*neuron_id].get_inputs() {
+                        for input in inputs {
+                            if let InputKind::Axon(axon) = input {
+                                assert!(!processed_neurons.contains(&axon.get_id()));
+                                assert_eq!(
+                                    network.layers[i - 1]
+                                        .neurons
+                                        .iter()
+                                        .filter(|x| *x == &axon.get_id())
+                                        .count(),
+                                    1
+                                );
+                                processed_neurons.push(*neuron_id);
+                            }
                         }
                     }
                 }
