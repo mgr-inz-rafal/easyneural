@@ -12,17 +12,30 @@ pub(crate) enum InputKind {
 pub(crate) struct Neuron {
     pub(crate) inputs: Vec<InputKind>,
     pub(crate) value: Option<f64>,
+    pub(crate) fixed_value: Option<f64>, // TODO: Add trait with get_value()
 }
 
 impl Neuron {
+    pub(crate) fn get_value(&self) -> f64 {
+        if let Some(value) = self.fixed_value {
+            return value;
+        }
+        self.value.unwrap()
+    }
+
     pub fn new() -> Neuron {
         Neuron {
             inputs: Vec::new(),
             value: None,
+            fixed_value: None,
         }
     }
 
     pub(crate) fn fire(index: usize, neuron_repository: &mut Vec<Neuron>) -> f64 {
+        if let Some(fixed_value) = neuron_repository[index].fixed_value {
+            return fixed_value;
+        }
+
         let mut sum = 0.0;
 
         // TODO: This solution with two separate loops is a dirty hack, rethink this

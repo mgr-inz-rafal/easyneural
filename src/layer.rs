@@ -18,6 +18,7 @@ pub(crate) struct LayerBuilder<'a> {
     number_of_neurons: Option<usize>,
     neuron_repository: Option<&'a mut Vec<Neuron>>,
     previous_layer: Option<&'a Layer>,
+    bias: bool,
 }
 
 impl<'a> LayerBuilder<'a> {
@@ -26,7 +27,13 @@ impl<'a> LayerBuilder<'a> {
             number_of_neurons: None,
             neuron_repository: None,
             previous_layer: None,
+            bias: false,
         }
+    }
+
+    pub fn with_bias(mut self, bias: bool) -> Self {
+        self.bias = bias;
+        self
     }
 
     pub fn with_neurons(mut self, numbner_of_neurons: usize) -> Self {
@@ -52,15 +59,19 @@ impl<'a> LayerBuilder<'a> {
             if let Some(number_of_neurons) = self.number_of_neurons;
             if let Some(ref mut neuron_repository) = self.neuron_repository;
             then {
+                let mut new_neuron_id = None;
                 (0..number_of_neurons).for_each(|_| {
                     neuron_repository.push(
                         NeuronBuilder::new()
                             .with_connection_to_layer(previous_layer)
                             .build(&mut randomizer),
                     );
-                    let new_neuron = neuron_repository.len() - 1;
-                    layer.neurons.push(new_neuron);
+                    new_neuron_id = Some(neuron_repository.len() - 1);
+                    layer.neurons.push(new_neuron_id.unwrap());
                 });
+                if self.bias {
+                    neuron_repository[new_neuron_id.unwrap()].fixed_value = Some(1.0);
+                }
             }
         }
         layer

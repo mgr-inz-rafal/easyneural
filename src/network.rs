@@ -42,13 +42,18 @@ impl Network {
         });
     }
 
-    fn create_layers(&mut self, neurons_in_layers: &[usize]) {
+    fn create_layers(&mut self, neurons_in_layers: &[usize], bias: bool) {
         neurons_in_layers.iter().enumerate().for_each(|(index, _)| {
             self.layers.push(
                 LayerBuilder::new()
                     .with_neuron_repository(&mut self.neurons)
                     .with_neurons(neurons_in_layers[index])
                     .with_previous_layer(self.layers.last())
+                    .with_bias(if index == neurons_in_layers.len() - 1 {
+                        false
+                    } else {
+                        bias
+                    })
                     .build(&mut self.toolbox.randomizer),
             );
         });
@@ -82,6 +87,7 @@ pub struct NetworkBuilder {
     neurons_in_layers: Vec<usize>,
     inputs: Option<Vec<fn() -> f64>>,
     custom_randomizer: Option<Box<dyn FnMut() -> f64>>,
+    bias: bool,
 }
 
 impl NetworkBuilder {
@@ -90,11 +96,17 @@ impl NetworkBuilder {
             neurons_in_layers: Vec::new(),
             inputs: None,
             custom_randomizer: None,
+            bias: true,
         }
     }
 
-    pub fn with_neurons_in_layers(mut self, neurons_in_layers: Vec<usize>) -> Self {
-        self.neurons_in_layers = neurons_in_layers;
+    pub fn with_disabled_bias(mut self) -> Self {
+        self.bias = false;
+        self
+    }
+
+    pub fn with_neurons_in_layers(mut self, neurons_in_layers: &[usize]) -> Self {
+        self.neurons_in_layers.extend_from_slice(neurons_in_layers);
         self
     }
 
@@ -108,7 +120,7 @@ impl NetworkBuilder {
         self
     }
 
-    pub fn build(self) -> Network {
+    pub fn build(mut self) -> Network {
         assert!(
             self.neurons_in_layers.len() > 1,
             "Network must have at least 2 layers"
@@ -123,6 +135,12 @@ impl NetworkBuilder {
             "Number of neurons on the first layer must be the same as number of inputs"
         );
 
+        if self.bias {
+            for i in 0..self.neurons_in_layers.len() - 1 {
+                self.neurons_in_layers[i] += 1;
+            }
+        }
+
         let mut network = Network::new(
             self.neurons_in_layers.len(),
             self.neurons_in_layers.iter().sum(),
@@ -135,7 +153,7 @@ impl NetworkBuilder {
         network.neurons.push(Neuron::new());
         let neuron_buffer_address = &network.neurons[0] as *const _;
         network.neurons.clear();
-        network.create_layers(&self.neurons_in_layers);
+        network.create_layers(&self.neurons_in_layers, self.bias);
         network.setup_inputs(self.inputs.as_ref().unwrap().to_vec());
         assert_eq!(
             &network.neurons[0] as *const _, neuron_buffer_address,
@@ -155,10 +173,10 @@ mod tests {
         let input2 = || 2.2;
         let input3 = || 3.3;
 
-        // TODO: No need to be mutable, I presume
         let mut network = NetworkBuilder::new()
-            .with_neurons_in_layers(vec![3, 2, 5, 2])
+            .with_neurons_in_layers(&[3, 2, 5, 2])
             .with_inputs(vec![input1, input2, input3])
+            .with_disabled_bias()
             .build();
 
         // Check number of layers
@@ -240,11 +258,11 @@ mod tests {
             17.2
         }
 
-        // TODO: No need to be mutable, I presume
         let mut network = NetworkBuilder::new()
-            .with_neurons_in_layers(vec![2, 2, 1])
+            .with_neurons_in_layers(&[2, 2, 1])
             .with_inputs(vec![input1, input2])
             .with_custom_randomizer(custom_randomizer)
+            .with_disabled_bias()
             .build();
 
         network.neurons.iter_mut().for_each(|neuron| {
@@ -271,9 +289,10 @@ mod tests {
             current_random_value
         };
         let mut network = NetworkBuilder::new()
-            .with_neurons_in_layers(vec![2, 2, 1])
+            .with_neurons_in_layers(&[2, 2, 1])
             .with_inputs(vec![input1, input2])
             .with_custom_randomizer(custom_random_number_generator)
+            .with_disabled_bias()
             .build();
 
         let mut index = 1;
@@ -302,9 +321,10 @@ mod tests {
             current_random_value
         };
         let mut network = NetworkBuilder::new()
-            .with_neurons_in_layers(vec![2, 2, 1])
+            .with_neurons_in_layers(&[2, 2, 1])
             .with_inputs(vec![input1, input2])
             .with_custom_randomizer(custom_random_number_generator)
+            .with_disabled_bias()
             .build();
 
         let serialized = serde_json::to_string(&network).unwrap();
@@ -330,5 +350,39 @@ mod tests {
 
         let serialized = serde_json::to_string(&network).unwrap();
         println!("{}", serialized);
+    }
+
+    #[test]
+    fn bias_neurons() {
+        let input1 = || 1.1;
+        let input2 = || 2.2;
+
+        let neuron_count = [2, 3, 1];
+        let mut network = NetworkBuilder::new()
+            .with_neurons_in_layers(&neuron_count)
+            .with_inputs(vec![input1, input2])
+            .build();
+
+        // Validate that each layer but last has one more neuron
+        let expected_neuron_count = [3, 4, 1];
+        network
+            .layers
+            .iter()
+            .map(|neuron_count| neuron_count.neurons.len())
+            .zip(expected_neuron_count.iter())
+            .for_each(|neuron_count| assert_eq!(neuron_count.0, *neuron_count.1));
+
+        network.fire();
+
+        // Validate that each bias neuron has the value of 1.0
+        for i in 0..network.layers.len() - 1 {
+            let last_neuron_index = network.layers[i].neurons.len() - 1;
+            let neuron_id = network.layers[i].neurons[last_neuron_index];
+            let neuron = &network.neurons[neuron_id];
+            assert!(relative_eq!(neuron.get_value(), 1.0));
+        }
+
+        let serialized = serde_json::to_string(&network).unwrap();
+        println!("{}", serialized); // TODO: Note to self - remove for release
     }
 }
