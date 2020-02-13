@@ -8,6 +8,7 @@ pub mod axon;
 pub mod layer;
 pub mod network;
 pub mod neuron;
+pub mod neuron_repository;
 
 use rand_distr::Normal;
 

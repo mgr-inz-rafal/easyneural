@@ -1,5 +1,6 @@
 use super::layer::{Layer, LayerBuilder};
 use super::neuron::{InputKind, Neuron};
+use super::neuron_repository::NeuronRepository;
 use rand_distr::Distribution;
 use serde::{Deserialize, Serialize};
 
@@ -15,63 +16,11 @@ impl Default for NetworkToolbox {
     }
 }
 
-pub struct NeuronRepository {
-    neurons: Vec<Neuron>,
-}
-
 #[derive(Serialize, Deserialize)]
 pub struct Network {
     layers: Vec<Layer>,
     #[serde(skip_deserializing, skip_serializing)]
     toolbox: NetworkToolbox,
-}
-
-impl NeuronRepository {
-    fn new(neuron_count: usize) -> NeuronRepository {
-        NeuronRepository {
-            neurons: Vec::with_capacity(neuron_count),
-        }
-    }
-
-    fn fire(&mut self, index: usize) {
-        if let Some(fixed_value) = self.neurons[index].fixed_value {
-            self.neurons[index].value = Some(fixed_value);
-        }
-
-        let mut sum = 0.0;
-
-        // TODO: This solution with two separate loops is a dirty hack, rethink this
-        for input in &mut self.neurons[index].inputs {
-            match input {
-                InputKind::Value(cb) => {
-                    let my_value = (cb.as_mut().unwrap())();
-                    println!("\t\tValue: {}", my_value);
-                    sum += my_value;
-                }
-                _ => {}
-            }
-        }
-
-        for input in &self.neurons[index].inputs {
-            match input {
-                InputKind::Axon(axon) => {
-                    let my_weight = axon.get_weight();
-                    let connecting_id = axon.get_id();
-                    let connecting_value = &self.neurons[connecting_id].value;
-                    println!(
-                        "\t\tAxon: weight: {}, connecting_id: {}, connecting_value: {}",
-                        my_weight,
-                        connecting_id,
-                        connecting_value.unwrap()
-                    );
-                    sum += my_weight * connecting_value.unwrap();
-                }
-                _ => {}
-            }
-        }
-
-        self.neurons[index].value = Some(sum);
-    }
 }
 
 impl Network {
