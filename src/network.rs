@@ -66,9 +66,10 @@ impl Network {
     pub fn fire(&mut self, neuron_repository: &mut NeuronRepository) {
         for layer_id in 0..self.layers.len() {
             println!("Firing layer {}", layer_id);
-            for neuron_index in 0..self.layers[layer_id].neurons.len() {
-                neuron_repository.fire(self.layers[layer_id].neurons[neuron_index]);
-            }
+            self.layers[layer_id]
+                .neurons
+                .iter()
+                .for_each(|&neuron| neuron_repository.fire(neuron));
         }
     }
 }
