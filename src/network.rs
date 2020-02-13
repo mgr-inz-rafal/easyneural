@@ -64,13 +64,12 @@ impl Network {
     }
 
     pub fn fire(&mut self, neuron_repository: &mut NeuronRepository) {
-        for layer_id in 0..self.layers.len() {
-            println!("Firing layer {}", layer_id);
-            self.layers[layer_id]
+        self.layers.iter().for_each(|layer| {
+            layer
                 .neurons
                 .iter()
                 .for_each(|&neuron| neuron_repository.fire(neuron));
-        }
+        });
     }
 }
 
