@@ -30,46 +30,6 @@ impl Neuron {
             fixed_value: None,
         }
     }
-
-    pub(crate) fn fire(index: usize, neuron_repository: &mut Vec<Neuron>) -> f64 {
-        if let Some(fixed_value) = neuron_repository[index].fixed_value {
-            return fixed_value;
-        }
-
-        let mut sum = 0.0;
-
-        // TODO: This solution with two separate loops is a dirty hack, rethink this
-        for input in &mut neuron_repository[index].inputs {
-            match input {
-                InputKind::Value(cb) => {
-                    let my_value = (cb.as_mut().unwrap())();
-                    println!("\t\tValue: {}", my_value);
-                    sum += my_value;
-                }
-                _ => {}
-            }
-        }
-
-        for input in &neuron_repository[index].inputs {
-            match input {
-                InputKind::Axon(axon) => {
-                    let my_weight = axon.get_weight();
-                    let connecting_id = axon.get_id();
-                    let connecting_value = &neuron_repository[connecting_id].value;
-                    println!(
-                        "\t\tAxon: weight: {}, connecting_id: {}, connecting_value: {}",
-                        my_weight,
-                        connecting_id,
-                        connecting_value.unwrap()
-                    );
-                    sum += my_weight * connecting_value.unwrap();
-                }
-                _ => {}
-            }
-        }
-
-        sum
-    }
 }
 
 pub(crate) struct NeuronBuilder<'a> {
