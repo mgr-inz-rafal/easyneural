@@ -13,14 +13,14 @@ pub(crate) enum InputKind {
 pub(crate) struct Neuron {
     pub(crate) inputs: Vec<InputKind>,
     #[serde(skip_deserializing, skip_serializing)]
-    pub(crate) valoo: Option<Box<dyn Valued>>,
+    pub(crate) value: Option<Box<dyn Valued>>,
 }
 
 impl Neuron {
     pub fn new() -> Neuron {
         Neuron {
             inputs: Vec::new(),
-            valoo: None,
+            value: None,
         }
     }
 }

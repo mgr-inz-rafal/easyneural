@@ -71,7 +71,7 @@ impl<'a> LayerBuilder<'a> {
                     layer.neurons.push(new_neuron_id.unwrap());
                 });
                 if self.bias {
-                    neuron_repository[new_neuron_id.unwrap()].valoo = Some(Box::new(BiasNeuronValue));
+                    neuron_repository[new_neuron_id.unwrap()].value = Some(Box::new(BiasNeuronValue));
                 }
             }
         }

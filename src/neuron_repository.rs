@@ -31,7 +31,7 @@ impl NeuronRepository {
                 InputKind::Axon(axon) => {
                     let my_weight = axon.get_weight();
                     let connecting_id = axon.get_id();
-                    if let Some(connecting_value) = &self.neurons[connecting_id].valoo {
+                    if let Some(connecting_value) = &self.neurons[connecting_id].value {
                         println!(
                             "\t\tAxon: weight: {}, connecting_id: {}, connecting_value: {}",
                             my_weight,
@@ -47,10 +47,10 @@ impl NeuronRepository {
             }
         }
 
-        if let Some(valu) = &mut self.neurons[index].valoo {
+        if let Some(valu) = &mut self.neurons[index].value {
             valu.set(sum);
         } else {
-            self.neurons[index].valoo = Some(Box::new(NeuronValue { value: sum }));
+            self.neurons[index].value = Some(Box::new(NeuronValue { value: sum }));
         }
     }
 }
