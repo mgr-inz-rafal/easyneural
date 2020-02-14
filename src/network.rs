@@ -333,18 +333,24 @@ mod tests {
         network.fire(&mut neuron_repository);
 
         let mut neuron = neuron_repository.neurons.iter_mut();
-        assert!(relative_eq!(neuron.next().unwrap().value.unwrap(), 17.54));
-        assert!(relative_eq!(neuron.next().unwrap().value.unwrap(), -9.214));
         assert!(relative_eq!(
-            neuron.next().unwrap().value.unwrap(),
+            neuron.next().unwrap().valoo.as_ref().unwrap().get(),
+            17.54
+        ));
+        assert!(relative_eq!(
+            neuron.next().unwrap().valoo.as_ref().unwrap().get(),
+            -9.214
+        ));
+        assert!(relative_eq!(
+            neuron.next().unwrap().valoo.as_ref().unwrap().get(),
             1.0 * 17.54 + 2.0 * -9.214
         ));
         assert!(relative_eq!(
-            neuron.next().unwrap().value.unwrap(),
+            neuron.next().unwrap().valoo.as_ref().unwrap().get(),
             3.0 * 17.54 + 4.0 * -9.214
         ));
         assert!(relative_eq!(
-            neuron.next().unwrap().value.unwrap(),
+            neuron.next().unwrap().valoo.as_ref().unwrap().get(),
             (1.0 * 17.54 + 2.0 * -9.214) * 5.0 + (3.0 * 17.54 + 4.0 * -9.214) * 6.0
         ));
 
@@ -379,7 +385,7 @@ mod tests {
             let last_neuron_index = network.layers[i].neurons.len() - 1;
             let neuron_id = network.layers[i].neurons[last_neuron_index];
             let neuron = &neuron_repository.neurons[neuron_id];
-            assert!(relative_eq!(neuron.get_value(), 1.0));
+            assert!(relative_eq!(neuron.valoo.as_ref().unwrap().get(), 1.0));
         }
 
         let serialized = serde_json::to_string(&network).unwrap();
