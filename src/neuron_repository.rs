@@ -47,10 +47,9 @@ impl NeuronRepository {
             }
         }
 
-        if let Some(value) = &mut self.neurons[index].value {
-            value.set(sum);
-        } else {
-            self.neurons[index].value = Some(Box::new(NeuronValue { value: sum }));
-        }
+        let value = self.neurons[index]
+            .value
+            .get_or_insert(Box::new(NeuronValue { value: sum }));
+        value.set(sum); // TODO: This is necessary for "double fire" to work. Add test and refactor
     }
 }
