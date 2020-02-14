@@ -1,5 +1,6 @@
 use super::neuron::{InputKind, Neuron};
-use crate::NeuronValue;
+use crate::neuron_value::NeuronValue;
+
 pub struct NeuronRepository {
     pub(crate) neurons: Vec<Neuron>,
 }

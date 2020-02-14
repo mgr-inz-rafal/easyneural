@@ -1,6 +1,6 @@
 use super::axon::Axon;
 use super::layer::Layer;
-use crate::Valued;
+use super::neuron_value::Valued;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]

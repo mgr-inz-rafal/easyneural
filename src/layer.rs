@@ -1,5 +1,5 @@
 use super::neuron::{Neuron, NeuronBuilder};
-use crate::BiasNeuronValue;
+use super::neuron_value::BiasNeuronValue;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
