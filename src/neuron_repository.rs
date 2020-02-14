@@ -47,8 +47,8 @@ impl NeuronRepository {
             }
         }
 
-        if let Some(valu) = &mut self.neurons[index].value {
-            valu.set(sum);
+        if let Some(value) = &mut self.neurons[index].value {
+            value.set(sum);
         } else {
             self.neurons[index].value = Some(Box::new(NeuronValue { value: sum }));
         }
