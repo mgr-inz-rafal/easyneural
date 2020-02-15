@@ -359,6 +359,63 @@ mod tests {
     }
 
     #[test]
+    fn network_in_action_with_bias() {
+        let input1 = || 17.54;
+        let input2 = || -9.214;
+
+        let mut current_random_value = 0.0;
+        let custom_random_number_generator = move || {
+            current_random_value += 1.0;
+            current_random_value
+        };
+        let (mut network, mut neuron_repository) = NetworkBuilder::new()
+            .with_neurons_in_layers(&[2, 2, 1])
+            .with_inputs(vec![input1, input2])
+            .with_custom_randomizer(custom_random_number_generator)
+            .build();
+
+        let serialized = serde_json::to_string(&network).unwrap();
+        println!("{}", serialized); // TODO: Note to self - remove for release
+
+        network.fire(&mut neuron_repository);
+
+        let mut neuron = neuron_repository.neurons.iter_mut();
+        assert!(relative_eq!(
+            neuron.next().unwrap().value.as_ref().unwrap().get(),
+            17.54
+        ));
+        assert!(relative_eq!(
+            neuron.next().unwrap().value.as_ref().unwrap().get(),
+            -9.214
+        ));
+        assert!(relative_eq!(
+            neuron.next().unwrap().value.as_ref().unwrap().get(),
+            1.0
+        ));
+        assert!(relative_eq!(
+            neuron.next().unwrap().value.as_ref().unwrap().get(),
+            1.0 * 17.54 + 2.0 * -9.214 + 3.0 * 1.0
+        ));
+        assert!(relative_eq!(
+            neuron.next().unwrap().value.as_ref().unwrap().get(),
+            4.0 * 17.54 + 5.0 * -9.214 + 6.0 * 1.0
+        ));
+        assert!(relative_eq!(
+            neuron.next().unwrap().value.as_ref().unwrap().get(),
+            1.0
+        ));
+        assert!(relative_eq!(
+            neuron.next().unwrap().value.as_ref().unwrap().get(),
+            (1.0 * 17.54 + 2.0 * -9.214 + 3.0 * 1.0) * 7.0
+                + (4.0 * 17.54 + 5.0 * -9.214 + 6.0 * 1.0) * 8.0
+                + 1.0 * 9.0
+        ));
+
+        let serialized = serde_json::to_string(&network).unwrap();
+        println!("{}", serialized);
+    }
+
+    #[test]
     fn bias_neurons() {
         let input1 = || 1.1;
         let input2 = || 2.2;
