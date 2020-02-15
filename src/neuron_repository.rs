@@ -1,4 +1,5 @@
 use super::neuron::{InputKind, Neuron};
+use crate::neuron_value::NeuronValue;
 
 pub struct NeuronRepository {
     pub(crate) neurons: Vec<Neuron>,
@@ -12,10 +13,6 @@ impl NeuronRepository {
     }
 
     pub(crate) fn fire(&mut self, index: usize) {
-        if let Some(fixed_value) = self.neurons[index].fixed_value {
-            self.neurons[index].value = Some(fixed_value);
-        }
-
         let mut sum = 0.0;
 
         // TODO: This solution with two separate loops is a dirty hack, rethink this
@@ -35,19 +32,25 @@ impl NeuronRepository {
                 InputKind::Axon(axon) => {
                     let my_weight = axon.get_weight();
                     let connecting_id = axon.get_id();
-                    let connecting_value = &self.neurons[connecting_id].value;
-                    println!(
-                        "\t\tAxon: weight: {}, connecting_id: {}, connecting_value: {}",
-                        my_weight,
-                        connecting_id,
-                        connecting_value.unwrap()
-                    );
-                    sum += my_weight * connecting_value.unwrap();
+                    if let Some(connecting_value) = &self.neurons[connecting_id].value {
+                        println!(
+                            "\t\tAxon: weight: {}, connecting_id: {}, connecting_value: {}",
+                            my_weight,
+                            connecting_id,
+                            connecting_value.get()
+                        );
+                        sum += my_weight * connecting_value.get();
+                    } else {
+                        // TODO: Handle error here!
+                    }
                 }
                 _ => {}
             }
         }
 
-        self.neurons[index].value = Some(sum);
+        let value = self.neurons[index]
+            .value
+            .get_or_insert(Box::new(NeuronValue { value: sum }));
+        value.set(sum); // TODO: This is necessary for "double fire" to work. Add test and refactor
     }
 }

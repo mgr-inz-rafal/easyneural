@@ -1,4 +1,5 @@
 use super::neuron::{Neuron, NeuronBuilder};
+use super::neuron_value::BiasNeuronValue;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
@@ -51,7 +52,6 @@ impl<'a> LayerBuilder<'a> {
         self
     }
 
-    #[allow(clippy::borrowed_box)]
     pub fn build(&mut self, mut randomizer: &mut Box<(dyn FnMut() -> f64 + 'static)>) -> Layer {
         let mut layer = Layer::new();
         let previous_layer = self.previous_layer;
@@ -60,17 +60,17 @@ impl<'a> LayerBuilder<'a> {
             if let Some(ref mut neuron_repository) = self.neuron_repository;
             then {
                 let mut new_neuron_id = None;
-                (0..number_of_neurons).for_each(|_| {
+                for i in 0..number_of_neurons {
                     neuron_repository.push(
                         NeuronBuilder::new()
-                            .with_connection_to_layer(previous_layer)
-                            .build(&mut randomizer),
-                    );
+                            .with_connection_to_layer(if self.bias && (i == number_of_neurons-1) { None } else { previous_layer })
+                            .build(&mut randomizer));
                     new_neuron_id = Some(neuron_repository.len() - 1);
                     layer.neurons.push(new_neuron_id.unwrap());
-                });
+                }
+
                 if self.bias {
-                    neuron_repository[new_neuron_id.unwrap()].fixed_value = Some(1.0);
+                    neuron_repository[new_neuron_id.unwrap()].value = Some(Box::new(BiasNeuronValue));
                 }
             }
         }

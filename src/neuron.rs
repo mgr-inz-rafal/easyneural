@@ -1,5 +1,6 @@
 use super::axon::Axon;
 use super::layer::Layer;
+use super::neuron_value::Valued;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
@@ -11,23 +12,15 @@ pub(crate) enum InputKind {
 #[derive(Serialize, Deserialize)]
 pub(crate) struct Neuron {
     pub(crate) inputs: Vec<InputKind>,
-    pub(crate) value: Option<f64>,
-    pub(crate) fixed_value: Option<f64>, // TODO: Add trait with get_value()
+    #[serde(skip_deserializing, skip_serializing)]
+    pub(crate) value: Option<Box<dyn Valued>>,
 }
 
 impl Neuron {
-    pub(crate) fn get_value(&self) -> f64 {
-        if let Some(value) = self.fixed_value {
-            return value;
-        }
-        self.value.unwrap()
-    }
-
     pub fn new() -> Neuron {
         Neuron {
             inputs: Vec::new(),
             value: None,
-            fixed_value: None,
         }
     }
 }
