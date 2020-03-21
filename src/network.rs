@@ -77,5 +77,8 @@ mod tests {
             .iter()
             .zip(expected_neurons.iter())
             .for_each(|(x, y)| assert_eq!(x.len(), *y));
+
+        let serialized = serde_json::to_string(&net).unwrap();
+        println!("{}", serialized);
     }
 }
