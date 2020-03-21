@@ -45,8 +45,8 @@ impl<'a> NetworkBuilder<'a> {
                     net.layers[layer_index].push(net.neurons.len() - 1);
                 }
                 if layer_index != neurons_per_layer.len() - 1 {
-                    net.layers[layer_index].push(net.neurons.len() - 1);
                     net.neurons.push(Neuron::new(true));
+                    net.layers[layer_index].push(net.neurons.len() - 1);
                 }
             }
             net
