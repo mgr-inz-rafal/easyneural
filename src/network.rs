@@ -1,5 +1,5 @@
 use crate::neuron::Neuron;
-use crate::randomizer::Randomizer;
+use crate::randomizer::{FixedRandomizer, Randomizer};
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
@@ -39,7 +39,7 @@ impl<'a> NetworkBuilder<'a> {
 
     pub fn build(&self) -> Network {
         if let Some(neurons_per_layer) = self.neurons_per_layer {
-            let randomizer = Randomizer::new();
+            let mut randomizer = FixedRandomizer::new();
             let mut net = Network::new(neurons_per_layer.len());
             for layer_index in 0..neurons_per_layer.len() {
                 for _ in 0..neurons_per_layer[layer_index] {
@@ -51,12 +51,13 @@ impl<'a> NetworkBuilder<'a> {
                     net.neurons.push(Neuron::new(
                         false,
                         neurons_on_previous_layer,
-                        Some(&randomizer),
+                        Some(&mut randomizer),
                     ));
                     net.layers[layer_index].push(net.neurons.len() - 1);
                 }
                 if layer_index != neurons_per_layer.len() - 1 {
-                    net.neurons.push(Neuron::new(true, 0, None));
+                    net.neurons
+                        .push(Neuron::new(true, 0, None::<&mut FixedRandomizer>)); // TODO: Hmm...?
                     net.layers[layer_index].push(net.neurons.len() - 1);
                 }
             }

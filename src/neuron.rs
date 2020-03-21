@@ -1,4 +1,4 @@
-use crate::randomizer::Randomizer;
+use crate::randomizer::RandomProvider;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
@@ -12,7 +12,7 @@ impl Neuron {
     pub(crate) fn new(
         bias: bool,
         number_of_inputs: usize,
-        randomizer: Option<&Randomizer>,
+        randomizer: Option<&mut impl RandomProvider>,
     ) -> Neuron {
         Neuron {
             value: if bias { Some(1.0) } else { None },
