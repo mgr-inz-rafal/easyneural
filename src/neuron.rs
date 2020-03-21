@@ -12,7 +12,7 @@ impl Neuron {
     pub(crate) fn new(
         bias: bool,
         number_of_inputs: usize,
-        randomizer: Option<&mut impl RandomProvider>,
+        randomizer: &mut Option<&mut dyn RandomProvider>,
     ) -> Neuron {
         Neuron {
             value: if bias { Some(1.0) } else { None },
@@ -20,7 +20,7 @@ impl Neuron {
             inputs: {
                 let mut inputs = Vec::with_capacity(number_of_inputs);
                 if number_of_inputs > 0 {
-                    let randomizer = randomizer.expect("No randomizer provided");
+                    let randomizer = randomizer.as_mut().expect("No randomizer provided");
                     for _ in 0..number_of_inputs {
                         inputs.push(randomizer.get_number());
                     }

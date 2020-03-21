@@ -1,5 +1,5 @@
 use crate::neuron::Neuron;
-use crate::randomizer::{FixedRandomizer, Randomizer};
+use crate::randomizer::{FixedRandomizer, RandomProvider, Randomizer};
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
@@ -23,12 +23,14 @@ impl Network {
 
 pub struct NetworkBuilder<'a> {
     neurons_per_layer: Option<&'a [usize]>,
+    randomizer: Option<&'a mut dyn RandomProvider>,
 }
 
 impl<'a> NetworkBuilder<'a> {
     pub fn new() -> NetworkBuilder<'a> {
         NetworkBuilder {
             neurons_per_layer: None,
+            randomizer: None,
         }
     }
 
@@ -37,9 +39,13 @@ impl<'a> NetworkBuilder<'a> {
         self
     }
 
-    pub fn build(&self) -> Network {
+    pub fn with_randomizer(&mut self, randomizer: &'a mut dyn RandomProvider) -> &mut Self {
+        self.randomizer = Some(randomizer);
+        self
+    }
+
+    pub fn build(&mut self) -> Network {
         if let Some(neurons_per_layer) = self.neurons_per_layer {
-            let mut randomizer = FixedRandomizer::new();
             let mut net = Network::new(neurons_per_layer.len());
             for layer_index in 0..neurons_per_layer.len() {
                 for _ in 0..neurons_per_layer[layer_index] {
@@ -51,13 +57,12 @@ impl<'a> NetworkBuilder<'a> {
                     net.neurons.push(Neuron::new(
                         false,
                         neurons_on_previous_layer,
-                        Some(&mut randomizer),
+                        &mut self.randomizer,
                     ));
                     net.layers[layer_index].push(net.neurons.len() - 1);
                 }
                 if layer_index != neurons_per_layer.len() - 1 {
-                    net.neurons
-                        .push(Neuron::new(true, 0, None::<&mut FixedRandomizer>)); // TODO: Hmm...?
+                    net.neurons.push(Neuron::new(true, 0, &mut None));
                     net.layers[layer_index].push(net.neurons.len() - 1);
                 }
             }
@@ -73,9 +78,11 @@ mod tests {
     use crate::network::*;
     #[test]
     fn network_structure() {
+        let mut randomizer = FixedRandomizer::new();
         let neurons_per_layer = [2, 3, 1];
         let net = NetworkBuilder::new()
             .with_neurons_per_layer(&neurons_per_layer)
+            .with_randomizer(&mut randomizer)
             .build();
 
         let mut expected_neurons: Vec<usize> = neurons_per_layer.iter().map(|x| x + 1).collect();

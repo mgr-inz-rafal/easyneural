@@ -1,6 +1,6 @@
 use rand_distr::{Distribution, Normal};
 
-pub(crate) trait RandomProvider {
+pub trait RandomProvider {
     fn get_number(&mut self) -> f64;
 }
 
