@@ -41,8 +41,12 @@ impl<'a> NetworkBuilder<'a> {
             let mut net = Network::new(neurons_per_layer.len());
             for layer_index in 0..neurons_per_layer.len() {
                 for _ in 0..neurons_per_layer[layer_index] {
-                    net.neurons.push(Neuron::new());
+                    net.neurons.push(Neuron::new(false));
                     net.layers[layer_index].push(net.neurons.len() - 1);
+                }
+                if layer_index != neurons_per_layer.len() - 1 {
+                    net.layers[layer_index].push(net.neurons.len() - 1);
+                    net.neurons.push(Neuron::new(true));
                 }
             }
             net
@@ -62,11 +66,16 @@ mod tests {
             .with_neurons_per_layer(&neurons_per_layer)
             .build();
 
+        let mut expected_neurons: Vec<usize> = neurons_per_layer.iter().map(|x| x + 1).collect();
+        if let Some(last) = expected_neurons.last_mut() {
+            *last -= 1;
+        }
+
         assert_eq!(net.layers.len(), neurons_per_layer.len());
 
         net.layers
             .iter()
-            .zip(neurons_per_layer.iter())
+            .zip(expected_neurons.iter())
             .for_each(|(x, y)| assert_eq!(x.len(), *y));
     }
 }

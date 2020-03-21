@@ -6,7 +6,9 @@ pub(crate) struct Neuron {
 }
 
 impl Neuron {
-    pub(crate) fn new() -> Neuron {
-        Neuron { value: 0.0 }
+    pub(crate) fn new(bias: bool) -> Neuron {
+        Neuron {
+            value: if bias { 1.0 } else { 0.0 },
+        }
     }
 }
