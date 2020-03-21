@@ -40,8 +40,10 @@ impl<'a> NetworkBuilder<'a> {
         if let Some(neurons_per_layer) = self.neurons_per_layer {
             let mut net = Network::new(neurons_per_layer.len());
             for layer_index in 0..neurons_per_layer.len() {
-                net.neurons.push(Neuron::new());
-                net.layers[layer_index].push(net.neurons.len() - 1);
+                for _ in 0..neurons_per_layer[layer_index] {
+                    net.neurons.push(Neuron::new());
+                    net.layers[layer_index].push(net.neurons.len() - 1);
+                }
             }
             net
         } else {
@@ -60,6 +62,11 @@ mod tests {
             .with_neurons_per_layer(&neurons_per_layer)
             .build();
 
-        assert_eq!(net.layers.len(), neurons_per_layer.len())
+        assert_eq!(net.layers.len(), neurons_per_layer.len());
+
+        net.layers
+            .iter()
+            .zip(neurons_per_layer.iter())
+            .for_each(|(x, y)| assert_eq!(x.len(), *y));
     }
 }
