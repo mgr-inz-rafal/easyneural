@@ -4,12 +4,8 @@ extern crate approx;
 #[macro_use]
 extern crate if_chain;
 
-pub mod axon;
-pub mod layer;
 pub mod network;
 pub mod neuron;
-pub mod neuron_repository;
-pub mod neuron_value;
 
 use rand_distr::Normal;
 
