@@ -1,5 +1,5 @@
 use crate::neuron::Neuron;
-use crate::randomizer::{FixedRandomizer, RandomProvider, Randomizer};
+use crate::randomizer::{DefaultRandomizer, FixedRandomizer, RandomProvider};
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
@@ -78,7 +78,7 @@ mod tests {
     use crate::network::*;
     #[test]
     fn network_structure() {
-        let mut randomizer = FixedRandomizer::new();
+        let mut randomizer = DefaultRandomizer::new();
         let neurons_per_layer = [2, 3, 1];
         let net = NetworkBuilder::new()
             .with_neurons_per_layer(&neurons_per_layer)
