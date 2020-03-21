@@ -75,6 +75,7 @@ impl<'a> NetworkBuilder<'a> {
 
 #[cfg(test)]
 mod tests {
+    #[macro_use]
     use crate::network::*;
     #[test]
     fn network_structure() {
@@ -96,6 +97,16 @@ mod tests {
             .iter()
             .zip(expected_neurons.iter())
             .for_each(|(x, y)| assert_eq!(x.len(), *y));
+
+        for layer_id in 0..net.layers.len() - 1 {
+            let layer = &net.layers[layer_id];
+            let last_neuron_id = *layer.last().expect("Layer empty");
+            let last_neuron = &net.neurons[last_neuron_id];
+            assert!(relative_eq!(
+                last_neuron.value.expect("Neuron w/o value"),
+                1.0
+            ));
+        }
 
         let serialized = serde_json::to_string(&net).unwrap();
         println!("{}", serialized);

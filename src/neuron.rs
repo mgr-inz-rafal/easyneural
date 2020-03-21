@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
 pub(crate) struct Neuron {
-    value: Option<f64>,
+    pub(crate) value: Option<f64>,
     bias: bool,
     inputs: Vec<f64>,
 }
