@@ -1,5 +1,5 @@
 use crate::neuron::Neuron;
-use crate::randomizer::Randomizer;
+use crate::randomizer::{DefaultRandomizer, FixedRandomizer, RandomProvider};
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
@@ -19,16 +19,80 @@ impl Network {
             },
         }
     }
+
+    #[allow(dead_code)]
+    fn set_layer_values(layer: &mut Vec<usize>, input_values: &[f64], neurons: &mut Vec<Neuron>) {
+        layer
+            .iter()
+            .zip(input_values.iter())
+            .for_each(|(neuron_id, input_value)| {
+                neurons[*neuron_id].value = Some(*input_value);
+                println!("{}, {}", neuron_id, input_value);
+            });
+    }
+
+    #[allow(dead_code)]
+    fn fire_layer(
+        layer: &Vec<usize>,
+        prev_layer: &Vec<usize>,
+        neurons: &mut Vec<Neuron>,
+        is_last: bool,
+    ) {
+        for i in 0..layer.len() - if is_last { 0 } else { 1 } {
+            let mut value = 0.0;
+            let neuron_index = layer[i];
+            for j in 0..prev_layer.len() {
+                let input_index = j;
+                let input_value = neurons[neuron_index].inputs[input_index];
+                let prev_layer_neuron_index = prev_layer[j];
+                let prev_layer_neuron_value = neurons[prev_layer_neuron_index]
+                    .value
+                    .expect("Neuron w/o value found");
+                value += input_value * prev_layer_neuron_value;
+            }
+            neurons[neuron_index].value = Some(value);
+        }
+    }
+
+    #[allow(dead_code)]
+    fn fire(&mut self, input_values: &[f64]) {
+        assert!(
+            self.layers.len() > 0,
+            "Trying to fire network with no layers"
+        );
+        assert_eq!(
+            input_values.len(),
+            self.layers[0].len() - 1,
+            "Incorrent number of inputs"
+        );
+
+        Network::set_layer_values(&mut self.layers[0], input_values, &mut self.neurons);
+        for layer_index in 1..self.layers.len() {
+            Network::fire_layer(
+                &self.layers[layer_index],
+                &self.layers[layer_index - 1],
+                &mut self.neurons,
+                if layer_index == self.layers.len() - 1 {
+                    true
+                } else {
+                    false
+                },
+            );
+            println!();
+        }
+    }
 }
 
 pub struct NetworkBuilder<'a> {
     neurons_per_layer: Option<&'a [usize]>,
+    randomizer: Option<&'a mut dyn RandomProvider>,
 }
 
 impl<'a> NetworkBuilder<'a> {
     pub fn new() -> NetworkBuilder<'a> {
         NetworkBuilder {
             neurons_per_layer: None,
+            randomizer: None,
         }
     }
 
@@ -37,9 +101,13 @@ impl<'a> NetworkBuilder<'a> {
         self
     }
 
-    pub fn build(&self) -> Network {
+    pub fn with_randomizer(&mut self, randomizer: &'a mut dyn RandomProvider) -> &mut Self {
+        self.randomizer = Some(randomizer);
+        self
+    }
+
+    pub fn build(&mut self) -> Network {
         if let Some(neurons_per_layer) = self.neurons_per_layer {
-            let randomizer = Randomizer::new();
             let mut net = Network::new(neurons_per_layer.len());
             for layer_index in 0..neurons_per_layer.len() {
                 for _ in 0..neurons_per_layer[layer_index] {
@@ -51,12 +119,12 @@ impl<'a> NetworkBuilder<'a> {
                     net.neurons.push(Neuron::new(
                         false,
                         neurons_on_previous_layer,
-                        Some(&randomizer),
+                        &mut self.randomizer,
                     ));
                     net.layers[layer_index].push(net.neurons.len() - 1);
                 }
                 if layer_index != neurons_per_layer.len() - 1 {
-                    net.neurons.push(Neuron::new(true, 0, None));
+                    net.neurons.push(Neuron::new(true, 0, &mut None));
                     net.layers[layer_index].push(net.neurons.len() - 1);
                 }
             }
@@ -71,10 +139,13 @@ impl<'a> NetworkBuilder<'a> {
 mod tests {
     use crate::network::*;
     #[test]
-    fn network_structure() {
-        let neurons_per_layer = [2, 3, 1];
+    fn structure() {
+        use crate::BIAS_VALUE;
+        let mut randomizer = DefaultRandomizer::new();
+        let neurons_per_layer = [20, 30, 10];
         let net = NetworkBuilder::new()
             .with_neurons_per_layer(&neurons_per_layer)
+            .with_randomizer(&mut randomizer)
             .build();
 
         let mut expected_neurons: Vec<usize> = neurons_per_layer.iter().map(|x| x + 1).collect();
@@ -88,6 +159,59 @@ mod tests {
             .iter()
             .zip(expected_neurons.iter())
             .for_each(|(x, y)| assert_eq!(x.len(), *y));
+
+        for layer_id in 0..net.layers.len() - 1 {
+            let layer = &net.layers[layer_id];
+            let last_neuron_id = *layer.last().expect("Layer empty");
+            let last_neuron = &net.neurons[last_neuron_id];
+            assert!(relative_eq!(
+                last_neuron.value.expect("Neuron w/o value"),
+                BIAS_VALUE
+            ));
+        }
+
+        let serialized = serde_json::to_string(&net).unwrap();
+        println!("{}", serialized);
+    }
+
+    #[test]
+    fn calculations() {
+        let mut randomizer = FixedRandomizer::new();
+        let neurons_per_layer = [2, 3, 1];
+        let mut net = NetworkBuilder::new()
+            .with_neurons_per_layer(&neurons_per_layer)
+            .with_randomizer(&mut randomizer)
+            .build();
+
+        net.fire(&[3.7, -2.8]);
+
+        assert!(relative_eq!(
+            net.neurons[2].value.unwrap(),
+            crate::BIAS_VALUE
+        ));
+        assert!(relative_eq!(
+            net.neurons[6].value.unwrap(),
+            crate::BIAS_VALUE
+        ));
+        assert!(relative_eq!(
+            net.neurons[3].value.unwrap(),
+            1.5 * 3.7 + 3.0 * -2.8 + 4.5 * 1.0
+        ));
+        assert!(relative_eq!(
+            net.neurons[4].value.unwrap(),
+            6.0 * 3.7 + 7.5 * -2.8 + 9.0 * 1.0
+        ));
+        assert!(relative_eq!(
+            net.neurons[5].value.unwrap(),
+            10.5 * 3.7 + 12.0 * -2.8 + 13.5 * 1.0
+        ));
+        assert!(relative_eq!(
+            net.neurons[7].value.unwrap(),
+            (1.5 * 3.7 + 3.0 * -2.8 + 4.5 * 1.0) * 15.0
+                + (6.0 * 3.7 + 7.5 * -2.8 + 9.0 * 1.0) * 16.5
+                + (10.5 * 3.7 + 12.0 * -2.8 + 13.5 * 1.0) * 18.0
+                + 19.5
+        ));
 
         let serialized = serde_json::to_string(&net).unwrap();
         println!("{}", serialized);
