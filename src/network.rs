@@ -17,9 +17,9 @@ impl Network {
     fn new(neurons_per_layers: &[usize], activator: fn(f64) -> f64) -> Network {
         Network {
             layout: NetworkLayout {
-                neurons: Vec::with_capacity({
-                    neurons_per_layers.iter().sum::<usize>() + neurons_per_layers.len() - 1
-                }),
+                neurons: Vec::with_capacity(
+                    neurons_per_layers.iter().sum::<usize>() + neurons_per_layers.len() - 1,
+                ),
                 layers: {
                     let mut layers = Vec::new();
                     layers.resize(neurons_per_layers.len(), Vec::new());
