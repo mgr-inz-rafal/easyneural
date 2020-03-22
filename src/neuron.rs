@@ -1,11 +1,12 @@
 use crate::randomizer::RandomProvider;
+use crate::BIAS_VALUE;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
 pub(crate) struct Neuron {
     pub(crate) value: Option<f64>,
     bias: bool,
-    inputs: Vec<f64>,
+    pub(crate) inputs: Vec<f64>,
 }
 
 impl Neuron {
@@ -15,7 +16,7 @@ impl Neuron {
         randomizer: &mut Option<&mut dyn RandomProvider>,
     ) -> Neuron {
         Neuron {
-            value: if bias { Some(1.0) } else { None },
+            value: if bias { Some(BIAS_VALUE) } else { None },
             bias,
             inputs: {
                 let mut inputs = Vec::with_capacity(number_of_inputs);

@@ -19,6 +19,85 @@ impl Network {
             },
         }
     }
+
+    #[allow(dead_code)]
+    fn set_layer_values(layer: &mut Vec<usize>, input_values: &[f64], neurons: &mut Vec<Neuron>) {
+        layer
+            .iter()
+            .zip(input_values.iter())
+            .for_each(|(neuron_id, input_value)| {
+                neurons[*neuron_id].value = Some(*input_value);
+                println!("{}, {}", neuron_id, input_value);
+            });
+    }
+
+    #[allow(dead_code)]
+    fn fire_layer(
+        layer: &Vec<usize>,
+        prev_layer: &Vec<usize>,
+        neurons: &mut Vec<Neuron>,
+        is_last: bool,
+    ) {
+        println!(
+            "Current layer len: {}, prev layer len: {}",
+            layer.len(),
+            prev_layer.len()
+        );
+
+        for i in 0..layer.len() - if is_last { 0 } else { 1 } {
+            let mut value = 0.0;
+            let neuron_index = layer[i];
+            for j in 0..prev_layer.len() {
+                let input_index = j;
+                let input_value = neurons[neuron_index].inputs[input_index];
+                let prev_layer_neuron_index = prev_layer[j];
+                let prev_layer_neuron_value = neurons[prev_layer_neuron_index]
+                    .value
+                    .expect("Neuron w/o value found");
+
+                println!(
+                    "Input {} [{}] of neuron {} - neuron on previous layer: {} [{}]",
+                    input_index,
+                    input_value,
+                    neuron_index,
+                    prev_layer_neuron_index,
+                    prev_layer_neuron_value
+                );
+
+                value += input_value * prev_layer_neuron_value;
+            }
+            println!("Calculated value: {}", value);
+            neurons[neuron_index].value = Some(value);
+        }
+    }
+
+    fn fire(&mut self, input_values: &[f64]) {
+        assert!(
+            self.layers.len() > 0,
+            "Trying to fire network with no layers"
+        );
+        assert_eq!(
+            input_values.len(),
+            self.layers[0].len() - 1,
+            "Incorrent number of inputs"
+        );
+
+        Network::set_layer_values(&mut self.layers[0], input_values, &mut self.neurons);
+        for layer_index in 1..self.layers.len() {
+            println!("Firing layer: {}", layer_index);
+            Network::fire_layer(
+                &self.layers[layer_index],
+                &self.layers[layer_index - 1],
+                &mut self.neurons,
+                if layer_index == self.layers.len() - 1 {
+                    true
+                } else {
+                    false
+                },
+            );
+            println!();
+        }
+    }
 }
 
 pub struct NetworkBuilder<'a> {
@@ -75,12 +154,12 @@ impl<'a> NetworkBuilder<'a> {
 
 #[cfg(test)]
 mod tests {
-    #[macro_use]
     use crate::network::*;
     #[test]
-    fn network_structure() {
+    fn structure() {
+        use crate::BIAS_VALUE;
         let mut randomizer = DefaultRandomizer::new();
-        let neurons_per_layer = [2, 3, 1];
+        let neurons_per_layer = [20, 30, 10];
         let net = NetworkBuilder::new()
             .with_neurons_per_layer(&neurons_per_layer)
             .with_randomizer(&mut randomizer)
@@ -104,9 +183,52 @@ mod tests {
             let last_neuron = &net.neurons[last_neuron_id];
             assert!(relative_eq!(
                 last_neuron.value.expect("Neuron w/o value"),
-                1.0
+                BIAS_VALUE
             ));
         }
+
+        let serialized = serde_json::to_string(&net).unwrap();
+        println!("{}", serialized);
+    }
+
+    #[test]
+    fn calculations() {
+        let mut randomizer = FixedRandomizer::new();
+        let neurons_per_layer = [2, 3, 1];
+        let mut net = NetworkBuilder::new()
+            .with_neurons_per_layer(&neurons_per_layer)
+            .with_randomizer(&mut randomizer)
+            .build();
+
+        net.fire(&[3.7, -2.8]);
+
+        assert!(relative_eq!(
+            net.neurons[2].value.unwrap(),
+            crate::BIAS_VALUE
+        ));
+        assert!(relative_eq!(
+            net.neurons[6].value.unwrap(),
+            crate::BIAS_VALUE
+        ));
+        assert!(relative_eq!(
+            net.neurons[3].value.unwrap(),
+            1.5 * 3.7 + 3.0 * -2.8 + 4.5 * 1.0
+        ));
+        assert!(relative_eq!(
+            net.neurons[4].value.unwrap(),
+            6.0 * 3.7 + 7.5 * -2.8 + 9.0 * 1.0
+        ));
+        assert!(relative_eq!(
+            net.neurons[5].value.unwrap(),
+            10.5 * 3.7 + 12.0 * -2.8 + 13.5 * 1.0
+        ));
+        assert!(relative_eq!(
+            net.neurons[7].value.unwrap(),
+            (1.5 * 3.7 + 3.0 * -2.8 + 4.5 * 1.0) * 15.0
+                + (6.0 * 3.7 + 7.5 * -2.8 + 9.0 * 1.0) * 16.5
+                + (10.5 * 3.7 + 12.0 * -2.8 + 13.5 * 1.0) * 18.0
+                + 19.5
+        ));
 
         let serialized = serde_json::to_string(&net).unwrap();
         println!("{}", serialized);
