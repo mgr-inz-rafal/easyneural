@@ -38,12 +38,6 @@ impl Network {
         neurons: &mut Vec<Neuron>,
         is_last: bool,
     ) {
-        println!(
-            "Current layer len: {}, prev layer len: {}",
-            layer.len(),
-            prev_layer.len()
-        );
-
         for i in 0..layer.len() - if is_last { 0 } else { 1 } {
             let mut value = 0.0;
             let neuron_index = layer[i];
@@ -54,23 +48,13 @@ impl Network {
                 let prev_layer_neuron_value = neurons[prev_layer_neuron_index]
                     .value
                     .expect("Neuron w/o value found");
-
-                println!(
-                    "Input {} [{}] of neuron {} - neuron on previous layer: {} [{}]",
-                    input_index,
-                    input_value,
-                    neuron_index,
-                    prev_layer_neuron_index,
-                    prev_layer_neuron_value
-                );
-
                 value += input_value * prev_layer_neuron_value;
             }
-            println!("Calculated value: {}", value);
             neurons[neuron_index].value = Some(value);
         }
     }
 
+    #[allow(dead_code)]
     fn fire(&mut self, input_values: &[f64]) {
         assert!(
             self.layers.len() > 0,
@@ -84,7 +68,6 @@ impl Network {
 
         Network::set_layer_values(&mut self.layers[0], input_values, &mut self.neurons);
         for layer_index in 1..self.layers.len() {
-            println!("Firing layer: {}", layer_index);
             Network::fire_layer(
                 &self.layers[layer_index],
                 &self.layers[layer_index - 1],
