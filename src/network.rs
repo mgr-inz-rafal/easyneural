@@ -127,6 +127,18 @@ impl<'a> NetworkBuilder<'a> {
         self
     }
 
+    fn number_of_neurons_on_previous_layer(
+        &self,
+        layer_index: usize,
+        neurons_per_layer: &[usize],
+    ) -> usize {
+        if layer_index == 0 {
+            0
+        } else {
+            neurons_per_layer[layer_index - 1] + 1
+        }
+    }
+
     pub fn build(&mut self) -> Network {
         if let Some(neurons_per_layer) = self.neurons_per_layer {
             if let Some(activator) = self.activator {
@@ -138,11 +150,8 @@ impl<'a> NetworkBuilder<'a> {
 
                 for layer_index in 0..neurons_per_layer.len() {
                     for _ in 0..neurons_per_layer[layer_index] {
-                        let neurons_on_previous_layer = if layer_index == 0 {
-                            0
-                        } else {
-                            neurons_per_layer[layer_index - 1] + 1
-                        };
+                        let neurons_on_previous_layer = self
+                            .number_of_neurons_on_previous_layer(layer_index, neurons_per_layer);
                         net.layout.neurons.push(Neuron::new(
                             false,
                             neurons_on_previous_layer,
