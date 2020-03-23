@@ -234,7 +234,10 @@ mod tests {
             .with_activator(|x| x)
             .build();
 
-        net.fire(&[3.7, -2.8]);
+        const INPUT_1: f64 = 3.7;
+        const INPUT_2: f64 = -2.8;
+
+        net.fire(&[INPUT_1, INPUT_2]);
 
         assert!(relative_eq!(
             net.layout.neurons[2].value.unwrap(),
@@ -246,21 +249,21 @@ mod tests {
         ));
         assert!(relative_eq!(
             net.layout.neurons[3].value.unwrap(),
-            1.5 * 3.7 + 3.0 * -2.8 + 4.5 * 1.0
+            1.5 * INPUT_1 + 3.0 * INPUT_2 + 4.5 * 1.0
         ));
         assert!(relative_eq!(
             net.layout.neurons[4].value.unwrap(),
-            6.0 * 3.7 + 7.5 * -2.8 + 9.0 * 1.0
+            6.0 * INPUT_1 + 7.5 * INPUT_2 + 9.0 * 1.0
         ));
         assert!(relative_eq!(
             net.layout.neurons[5].value.unwrap(),
-            10.5 * 3.7 + 12.0 * -2.8 + 13.5 * 1.0
+            10.5 * INPUT_1 + 12.0 * INPUT_2 + 13.5 * 1.0
         ));
         assert!(relative_eq!(
             net.layout.neurons[7].value.unwrap(),
-            (1.5 * 3.7 + 3.0 * -2.8 + 4.5 * 1.0) * 15.0
-                + (6.0 * 3.7 + 7.5 * -2.8 + 9.0 * 1.0) * 16.5
-                + (10.5 * 3.7 + 12.0 * -2.8 + 13.5 * 1.0) * 18.0
+            (1.5 * INPUT_1 + 3.0 * INPUT_2 + 4.5 * 1.0) * 15.0
+                + (6.0 * INPUT_1 + 7.5 * INPUT_2 + 9.0 * 1.0) * 16.5
+                + (10.5 * INPUT_1 + 12.0 * INPUT_2 + 13.5 * 1.0) * 18.0
                 + 19.5
         ));
 
