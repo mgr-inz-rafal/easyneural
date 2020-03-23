@@ -1,5 +1,6 @@
 use crate::neuron::Neuron;
 use crate::randomizer::{DefaultRandomizer, FixedRandomizer, RandomProvider};
+use if_chain::if_chain;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
@@ -127,9 +128,24 @@ impl<'a> NetworkBuilder<'a> {
         self
     }
 
+    fn number_of_neurons_on_previous_layer(
+        &self,
+        layer_index: usize,
+        neurons_per_layer: &[usize],
+    ) -> usize {
+        if layer_index == 0 {
+            0
+        } else {
+            neurons_per_layer[layer_index - 1] + 1
+        }
+    }
+
     pub fn build(&mut self) -> Network {
-        if let Some(neurons_per_layer) = self.neurons_per_layer {
-            if let Some(activator) = self.activator {
+        if_chain! {
+            if let Some(neurons_per_layer) = self.neurons_per_layer;
+            if let Some(activator) = self.activator;
+            then
+            {
                 let mut net = Network::new(neurons_per_layer, activator);
 
                 net.layout.neurons.push(Neuron::new(true, 0, &mut None));
@@ -138,11 +154,8 @@ impl<'a> NetworkBuilder<'a> {
 
                 for layer_index in 0..neurons_per_layer.len() {
                     for _ in 0..neurons_per_layer[layer_index] {
-                        let neurons_on_previous_layer = if layer_index == 0 {
-                            0
-                        } else {
-                            neurons_per_layer[layer_index - 1] + 1
-                        };
+                        let neurons_on_previous_layer = self
+                            .number_of_neurons_on_previous_layer(layer_index, neurons_per_layer);
                         net.layout.neurons.push(Neuron::new(
                             false,
                             neurons_on_previous_layer,
@@ -161,11 +174,11 @@ impl<'a> NetworkBuilder<'a> {
                     "Reallocation of the neuron buffer detected"
                 );
                 net
-            } else {
-                panic!("No activator defined");
             }
-        } else {
-            panic!("Neurons per layer not set");
+            else
+            {
+                panic!("Unable to build network");
+            }
         }
     }
 }
@@ -221,7 +234,10 @@ mod tests {
             .with_activator(|x| x)
             .build();
 
-        net.fire(&[3.7, -2.8]);
+        const INPUT_1: f64 = 3.7;
+        const INPUT_2: f64 = -2.8;
+
+        net.fire(&[INPUT_1, INPUT_2]);
 
         assert!(relative_eq!(
             net.layout.neurons[2].value.unwrap(),
@@ -233,21 +249,21 @@ mod tests {
         ));
         assert!(relative_eq!(
             net.layout.neurons[3].value.unwrap(),
-            1.5 * 3.7 + 3.0 * -2.8 + 4.5 * 1.0
+            1.5 * INPUT_1 + 3.0 * INPUT_2 + 4.5 * 1.0
         ));
         assert!(relative_eq!(
             net.layout.neurons[4].value.unwrap(),
-            6.0 * 3.7 + 7.5 * -2.8 + 9.0 * 1.0
+            6.0 * INPUT_1 + 7.5 * INPUT_2 + 9.0 * 1.0
         ));
         assert!(relative_eq!(
             net.layout.neurons[5].value.unwrap(),
-            10.5 * 3.7 + 12.0 * -2.8 + 13.5 * 1.0
+            10.5 * INPUT_1 + 12.0 * INPUT_2 + 13.5 * 1.0
         ));
         assert!(relative_eq!(
             net.layout.neurons[7].value.unwrap(),
-            (1.5 * 3.7 + 3.0 * -2.8 + 4.5 * 1.0) * 15.0
-                + (6.0 * 3.7 + 7.5 * -2.8 + 9.0 * 1.0) * 16.5
-                + (10.5 * 3.7 + 12.0 * -2.8 + 13.5 * 1.0) * 18.0
+            (1.5 * INPUT_1 + 3.0 * INPUT_2 + 4.5 * 1.0) * 15.0
+                + (6.0 * INPUT_1 + 7.5 * INPUT_2 + 9.0 * 1.0) * 16.5
+                + (10.5 * INPUT_1 + 12.0 * INPUT_2 + 13.5 * 1.0) * 18.0
                 + 19.5
         ));
 
