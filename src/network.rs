@@ -1,5 +1,5 @@
 use crate::neuron::Neuron;
-use crate::randomizer::{DefaultRandomizer, FixedRandomizer, RandomProvider};
+use crate::randomizer::{DefaultRandomizer, RandomProvider};
 use if_chain::if_chain;
 use serde::{Deserialize, Serialize};
 
@@ -313,7 +313,16 @@ mod tests {
 
     #[test]
     fn calculations_with_custom_activator() {
-        let mut randomizer = FixedRandomizer::new();
+        pub(crate) struct TestRandomizer {
+            current: f64,
+        }
+        impl RandomProvider for TestRandomizer {
+            fn get_number(&mut self) -> f64 {
+                self.current += 1.5;
+                self.current
+            }
+        }
+        let mut randomizer = TestRandomizer { current: 0.0 };
         let neurons_per_layer = [2, 3, 1];
         let mut net = NetworkBuilder::new()
             .with_neurons_per_layer(&neurons_per_layer)
