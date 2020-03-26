@@ -1,7 +1,7 @@
 use crate::network::{Network, NetworkBuilder};
 use crate::randomizer::DefaultRandomizer;
 
-struct Specimen {
+pub struct Specimen {
     brain: Network,
     fitness: isize,
 }
@@ -36,7 +36,9 @@ impl Trainer {
         })
     }
 
-    pub fn run_session(&self, inputs: &[f64]) {}
+    pub fn run_session(&mut self, inputs: &[f64]) -> (Specimen, Specimen) {
+        (self.population.remove(0), self.population.remove(1))
+    }
 }
 
 #[cfg(test)]
