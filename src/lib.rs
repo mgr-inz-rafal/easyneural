@@ -8,3 +8,4 @@ pub mod randomizer;
 pub mod trainer;
 
 const BIAS_VALUE: f64 = 1.0;
+const MINIMUM_POPULATION_SIZE: usize = 3;

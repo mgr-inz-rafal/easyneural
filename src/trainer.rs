@@ -11,8 +11,16 @@ pub struct Trainer {
 }
 
 impl Trainer {
-    pub fn new(population_size: usize, neurons_per_layer: &[usize]) -> Trainer {
-        Trainer {
+    pub fn new(population_size: usize, neurons_per_layer: &[usize]) -> Result<Trainer, String> {
+        use crate::MINIMUM_POPULATION_SIZE;
+
+        if population_size < MINIMUM_POPULATION_SIZE {
+            return Err(format!(
+                "Population too small, minimum size={}",
+                MINIMUM_POPULATION_SIZE
+            ));
+        }
+        Ok(Trainer {
             population: std::iter::repeat({
                 NetworkBuilder::new()
                     .with_neurons_per_layer(&neurons_per_layer)
@@ -25,7 +33,7 @@ impl Trainer {
                 fitness: 0,
             })
             .collect(),
-        }
+        })
     }
 
     pub fn run_session(&self, inputs: &[f64]) {}
@@ -36,10 +44,20 @@ mod tests {
     #[test]
     fn check_population_size() {
         use crate::trainer::Trainer;
-        const POPULATION_SIZE: usize = 10;
+        use crate::MINIMUM_POPULATION_SIZE;
 
-        let trainer = Trainer::new(POPULATION_SIZE, &[1]);
+        let trainer = Trainer::new(MINIMUM_POPULATION_SIZE, &[1]);
+        assert!(trainer.is_ok());
+        let trainer = trainer.unwrap();
+        assert_eq!(trainer.population.len(), MINIMUM_POPULATION_SIZE);
+    }
 
-        assert_eq!(trainer.population.len(), POPULATION_SIZE);
+    #[test]
+    fn population_too_small() {
+        use crate::trainer::Trainer;
+        use crate::MINIMUM_POPULATION_SIZE;
+
+        let trainer = Trainer::new(MINIMUM_POPULATION_SIZE - 1, &[1]);
+        assert!(trainer.is_err());
     }
 }
