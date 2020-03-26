@@ -4,12 +4,12 @@ pub trait RandomProvider {
     fn get_number(&mut self) -> f64;
 }
 
-pub(crate) struct DefaultRandomizer {
+pub struct DefaultRandomizer {
     sampler: Normal<f64>,
 }
 
 impl DefaultRandomizer {
-    pub(crate) fn new() -> DefaultRandomizer {
+    pub fn new() -> DefaultRandomizer {
         DefaultRandomizer {
             sampler: Normal::new(0.0, 1.0).expect("Unable to create randomizer"),
         }
