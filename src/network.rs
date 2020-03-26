@@ -74,7 +74,7 @@ impl Network {
         assert_eq!(
             input_values.len(),
             self.layout.layers[0].len() - 1,
-            "Incorrent number of inputs"
+            "Incorrect number of inputs"
         );
 
         Network::set_layer_values(
