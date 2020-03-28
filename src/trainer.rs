@@ -21,7 +21,7 @@ impl Trainer {
             ));
         }
         Ok(Trainer {
-            population: std::iter::repeat({
+            population: std::iter::repeat_with(|| {
                 NetworkBuilder::new()
                     .with_neurons_per_layer(&neurons_per_layer)
                     .with_randomizer(&mut DefaultRandomizer::new())
