@@ -2,12 +2,12 @@ use crate::network::{Network, NetworkBuilder};
 use crate::randomizer::DefaultRandomizer;
 
 pub struct Specimen {
-    brain: Network,
+    pub brain: Network,
     fitness: isize,
 }
 
 pub struct Trainer {
-    population: Vec<Specimen>,
+    pub population: Vec<Specimen>,
 }
 
 impl Trainer {
@@ -34,10 +34,6 @@ impl Trainer {
             })
             .collect(),
         })
-    }
-
-    pub fn run_session(&mut self, inputs: &[f64]) -> (Specimen, Specimen) {
-        (self.population.remove(0), self.population.remove(1))
     }
 }
 

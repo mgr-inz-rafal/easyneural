@@ -32,6 +32,22 @@ impl Network {
         }
     }
 
+    pub fn get_output(&self) -> Vec<f64> {
+        let last_layer = &self
+            .layout
+            .layers
+            .last()
+            .expect("Network has no last layer");
+        last_layer
+            .iter()
+            .map(|neuron_id| {
+                self.layout.neurons[*neuron_id]
+                    .value
+                    .expect("Neuron has no calculated value")
+            })
+            .collect()
+    }
+
     #[allow(dead_code)]
     fn set_layer_values(layer: &mut Vec<usize>, input_values: &[f64], neurons: &mut Vec<Neuron>) {
         layer
@@ -67,7 +83,7 @@ impl Network {
     }
 
     #[allow(dead_code)]
-    fn fire(&mut self, input_values: &[f64]) {
+    pub fn fire(&mut self, input_values: &[f64]) {
         assert!(
             self.layout.layers.len() > 0,
             "Trying to fire network with no layers"
