@@ -1,4 +1,4 @@
-use crate::trainer::{Specimen, SpecimenStatus};
+use crate::simulation::{Specimen, SpecimenStatus};
 
 pub trait SimulatingWorld {
     fn new() -> Self;

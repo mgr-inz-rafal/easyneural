@@ -12,13 +12,16 @@ pub struct Specimen {
     fitness: isize,
 }
 
-pub struct Trainer<T: SimulatingWorld> {
+pub struct Simulation<T: SimulatingWorld> {
     pub population: Vec<Specimen>,
     pub world: T,
 }
 
-impl<T: SimulatingWorld> Trainer<T> {
-    pub fn new(population_size: usize, neurons_per_layer: &[usize]) -> Result<Trainer<T>, String> {
+impl<T: SimulatingWorld> Simulation<T> {
+    pub fn new(
+        population_size: usize,
+        neurons_per_layer: &[usize],
+    ) -> Result<Simulation<T>, String> {
         use crate::MINIMUM_POPULATION_SIZE;
 
         if population_size < MINIMUM_POPULATION_SIZE {
@@ -27,7 +30,7 @@ impl<T: SimulatingWorld> Trainer<T> {
                 MINIMUM_POPULATION_SIZE
             ));
         }
-        Ok(Trainer {
+        Ok(Simulation {
             world: T::new(),
             population: std::iter::repeat_with(|| {
                 NetworkBuilder::new()
@@ -56,7 +59,7 @@ mod tests {
     #[test]
     fn check_population_size() {
         use crate::simulating_world::SimulatingWorld;
-        use crate::trainer::{Specimen, SpecimenStatus, Trainer};
+        use crate::simulation::{Simulation, Specimen, SpecimenStatus};
         use crate::MINIMUM_POPULATION_SIZE;
 
         struct TestWorld;
@@ -73,16 +76,16 @@ mod tests {
             }
         }
 
-        let trainer = Trainer::<TestWorld>::new(MINIMUM_POPULATION_SIZE, &[1]);
-        assert!(trainer.is_ok());
-        let trainer = trainer.unwrap();
-        assert_eq!(trainer.population.len(), MINIMUM_POPULATION_SIZE);
+        let simulation = Simulation::<TestWorld>::new(MINIMUM_POPULATION_SIZE, &[1]);
+        assert!(simulation.is_ok());
+        let simulation = simulation.unwrap();
+        assert_eq!(simulation.population.len(), MINIMUM_POPULATION_SIZE);
     }
 
     #[test]
     fn population_too_small() {
         use crate::simulating_world::SimulatingWorld;
-        use crate::trainer::{Specimen, SpecimenStatus, Trainer};
+        use crate::simulation::{Simulation, Specimen, SpecimenStatus};
         use crate::MINIMUM_POPULATION_SIZE;
 
         struct TestWorld;
@@ -99,7 +102,7 @@ mod tests {
             }
         }
 
-        let trainer = Trainer::<TestWorld>::new(MINIMUM_POPULATION_SIZE - 1, &[1]);
-        assert!(trainer.is_err());
+        let simulation = Simulation::<TestWorld>::new(MINIMUM_POPULATION_SIZE - 1, &[1]);
+        assert!(simulation.is_err());
     }
 }
