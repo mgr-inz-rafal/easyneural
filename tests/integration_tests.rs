@@ -1,26 +1,27 @@
 extern crate easyneural;
 
 use easyneural::trainer::{Specimen, Trainer};
+use easyneural::world::World;
 
 enum SpecimenStatus {
     ALIVE,
     DEAD,
 }
 
-struct World {
+struct MyWorld {
     tick: usize,
     liveliness: isize,
 }
 
-impl World {
-    pub fn new() -> World {
-        World {
+impl World for MyWorld {
+    fn new() -> MyWorld {
+        MyWorld {
             tick: 0,
             liveliness: 0,
         }
     }
 
-    pub fn drop(&mut self, specimen: &mut Specimen) {
+    fn release_specimen(&mut self, specimen: &mut Specimen) {
         self.tick = 0;
         loop {
             specimen.brain.fire(&[1.0, 2.0]);
@@ -31,7 +32,9 @@ impl World {
             }
         }
     }
+}
 
+impl MyWorld {
     fn process_inputs(&mut self, inputs: &[f64]) -> SpecimenStatus {
         self.tick += 1;
         self.liveliness = self.liveliness + if inputs[0] < 0.5 { -1 } else { 1 };
@@ -46,14 +49,9 @@ impl World {
 fn test_run_training_session() -> Result<(), String> {
     const POPULATION_SIZE: usize = 10;
 
-    let mut world = World::new();
-
     let neurons_per_layer = [2, 4, 5, 1];
-    let mut session = Trainer::new(POPULATION_SIZE, &neurons_per_layer)?;
-
-    session.population.iter_mut().for_each(|specimen| {
-        world.drop(specimen);
-    });
+    let mut session = Trainer::<MyWorld>::new(POPULATION_SIZE, &neurons_per_layer)?;
+    session.run_simulation();
 
     Ok(())
 }

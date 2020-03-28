@@ -1,17 +1,19 @@
 use crate::network::{Network, NetworkBuilder};
 use crate::randomizer::DefaultRandomizer;
+use crate::world::World;
 
 pub struct Specimen {
     pub brain: Network,
     fitness: isize,
 }
 
-pub struct Trainer {
+pub struct Trainer<T: World> {
     pub population: Vec<Specimen>,
+    pub world: T,
 }
 
-impl Trainer {
-    pub fn new(population_size: usize, neurons_per_layer: &[usize]) -> Result<Trainer, String> {
+impl<T: World> Trainer<T> {
+    pub fn new(population_size: usize, neurons_per_layer: &[usize]) -> Result<Trainer<T>, String> {
         use crate::MINIMUM_POPULATION_SIZE;
 
         if population_size < MINIMUM_POPULATION_SIZE {
@@ -21,6 +23,7 @@ impl Trainer {
             ));
         }
         Ok(Trainer {
+            world: T::new(),
             population: std::iter::repeat_with(|| {
                 NetworkBuilder::new()
                     .with_neurons_per_layer(&neurons_per_layer)
@@ -35,16 +38,31 @@ impl Trainer {
             .collect(),
         })
     }
+
+    pub fn run_simulation(&mut self) {
+        for mut specimen in &mut self.population {
+            self.world.release_specimen(&mut specimen);
+        }
+    }
 }
 
 #[cfg(test)]
 mod tests {
     #[test]
     fn check_population_size() {
-        use crate::trainer::Trainer;
+        use crate::trainer::{Specimen, Trainer};
+        use crate::world::World;
         use crate::MINIMUM_POPULATION_SIZE;
 
-        let trainer = Trainer::new(MINIMUM_POPULATION_SIZE, &[1]);
+        struct TestWorld;
+        impl World for TestWorld {
+            fn new() -> TestWorld {
+                TestWorld {}
+            }
+            fn release_specimen(&mut self, specimen: &mut Specimen) {}
+        }
+
+        let trainer = Trainer::<TestWorld>::new(MINIMUM_POPULATION_SIZE, &[1]);
         assert!(trainer.is_ok());
         let trainer = trainer.unwrap();
         assert_eq!(trainer.population.len(), MINIMUM_POPULATION_SIZE);
@@ -52,10 +70,19 @@ mod tests {
 
     #[test]
     fn population_too_small() {
-        use crate::trainer::Trainer;
+        use crate::trainer::{Specimen, Trainer};
+        use crate::world::World;
         use crate::MINIMUM_POPULATION_SIZE;
 
-        let trainer = Trainer::new(MINIMUM_POPULATION_SIZE - 1, &[1]);
+        struct TestWorld;
+        impl World for TestWorld {
+            fn new() -> TestWorld {
+                TestWorld {}
+            }
+            fn release_specimen(&mut self, specimen: &mut Specimen) {}
+        }
+
+        let trainer = Trainer::<TestWorld>::new(MINIMUM_POPULATION_SIZE - 1, &[1]);
         assert!(trainer.is_err());
     }
 }
