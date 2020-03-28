@@ -2,6 +2,11 @@ use crate::network::{Network, NetworkBuilder};
 use crate::randomizer::DefaultRandomizer;
 use crate::simulating_world::SimulatingWorld;
 
+pub enum SpecimenStatus {
+    ALIVE,
+    DEAD,
+}
+
 pub struct Specimen {
     pub brain: Network,
     fitness: isize,
@@ -51,7 +56,7 @@ mod tests {
     #[test]
     fn check_population_size() {
         use crate::simulating_world::SimulatingWorld;
-        use crate::trainer::{Specimen, Trainer};
+        use crate::trainer::{Specimen, SpecimenStatus, Trainer};
         use crate::MINIMUM_POPULATION_SIZE;
 
         struct TestWorld;
@@ -60,6 +65,12 @@ mod tests {
                 TestWorld {}
             }
             fn release_specimen(&mut self, specimen: &mut Specimen) {}
+            fn tick(&mut self) -> usize {
+                0
+            }
+            fn process_inputs(&mut self, outcome: &[f64]) -> SpecimenStatus {
+                SpecimenStatus::DEAD
+            }
         }
 
         let trainer = Trainer::<TestWorld>::new(MINIMUM_POPULATION_SIZE, &[1]);
@@ -71,7 +82,7 @@ mod tests {
     #[test]
     fn population_too_small() {
         use crate::simulating_world::SimulatingWorld;
-        use crate::trainer::{Specimen, Trainer};
+        use crate::trainer::{Specimen, SpecimenStatus, Trainer};
         use crate::MINIMUM_POPULATION_SIZE;
 
         struct TestWorld;
@@ -80,6 +91,12 @@ mod tests {
                 TestWorld {}
             }
             fn release_specimen(&mut self, specimen: &mut Specimen) {}
+            fn tick(&mut self) -> usize {
+                0
+            }
+            fn process_inputs(&mut self, outcome: &[f64]) -> SpecimenStatus {
+                SpecimenStatus::DEAD
+            }
         }
 
         let trainer = Trainer::<TestWorld>::new(MINIMUM_POPULATION_SIZE - 1, &[1]);
