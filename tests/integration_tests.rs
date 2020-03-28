@@ -1,7 +1,7 @@
 extern crate easyneural;
 
+use easyneural::simulating_world::SimulatingWorld;
 use easyneural::trainer::{Specimen, Trainer};
-use easyneural::world::World;
 
 enum SpecimenStatus {
     ALIVE,
@@ -13,7 +13,7 @@ struct MyWorld {
     liveliness: isize,
 }
 
-impl World for MyWorld {
+impl SimulatingWorld for MyWorld {
     fn new() -> MyWorld {
         MyWorld {
             tick: 0,

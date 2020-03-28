@@ -1,7 +1,6 @@
 use crate::trainer::Specimen;
 
-// TODO: Should be named differently, I think...
-pub trait World {
+pub trait SimulatingWorld {
     fn new() -> Self;
     fn release_specimen(&mut self, specimen: &mut Specimen);
 }

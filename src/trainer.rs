@@ -1,18 +1,18 @@
 use crate::network::{Network, NetworkBuilder};
 use crate::randomizer::DefaultRandomizer;
-use crate::world::World;
+use crate::simulating_world::SimulatingWorld;
 
 pub struct Specimen {
     pub brain: Network,
     fitness: isize,
 }
 
-pub struct Trainer<T: World> {
+pub struct Trainer<T: SimulatingWorld> {
     pub population: Vec<Specimen>,
     pub world: T,
 }
 
-impl<T: World> Trainer<T> {
+impl<T: SimulatingWorld> Trainer<T> {
     pub fn new(population_size: usize, neurons_per_layer: &[usize]) -> Result<Trainer<T>, String> {
         use crate::MINIMUM_POPULATION_SIZE;
 
@@ -50,12 +50,12 @@ impl<T: World> Trainer<T> {
 mod tests {
     #[test]
     fn check_population_size() {
+        use crate::simulating_world::SimulatingWorld;
         use crate::trainer::{Specimen, Trainer};
-        use crate::world::World;
         use crate::MINIMUM_POPULATION_SIZE;
 
         struct TestWorld;
-        impl World for TestWorld {
+        impl SimulatingWorld for TestWorld {
             fn new() -> TestWorld {
                 TestWorld {}
             }
@@ -70,12 +70,12 @@ mod tests {
 
     #[test]
     fn population_too_small() {
+        use crate::simulating_world::SimulatingWorld;
         use crate::trainer::{Specimen, Trainer};
-        use crate::world::World;
         use crate::MINIMUM_POPULATION_SIZE;
 
         struct TestWorld;
-        impl World for TestWorld {
+        impl SimulatingWorld for TestWorld {
             fn new() -> TestWorld {
                 TestWorld {}
             }
