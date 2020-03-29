@@ -7,9 +7,16 @@ pub enum SpecimenStatus {
     DEAD,
 }
 
+// TODO: To separate module
 pub struct Specimen {
     pub brain: Network,
     fitness: isize,
+}
+
+impl Specimen {
+    fn tick(&mut self, world_input: &[f64]) {
+        self.brain.fire(world_input);
+    }
 }
 
 pub struct Simulation<T: SimulatingWorld> {
@@ -48,8 +55,27 @@ impl<T: SimulatingWorld> Simulation<T> {
     }
 
     pub fn run_simulation(&mut self) {
-        for mut specimen in &mut self.population {
-            self.world.release_specimen(&mut specimen);
+        let mut current_state = self.world.get_world_state();
+        for specimen in &mut self.population {
+            loop {
+                specimen.tick(&current_state);
+                let output = specimen.brain.get_output();
+                let status = self.world.tick(&output);
+                if let SpecimenStatus::DEAD = status {
+                    break;
+                }
+                current_state = self.world.get_world_state();
+            }
+
+            println!("Specimen died");
+            /*
+            specimen.tick(&current_state);
+            let output = specimen.brain.get_output();
+            if let SpecimenStatus::DEAD = self.world.tick(&output) {
+                //  println!("Specimen died in tick {}", current_tick);
+                println!("Specimen died");
+            }
+            */
         }
     }
 }
@@ -63,12 +89,11 @@ mod tests {
         fn new() -> TestWorld {
             TestWorld {}
         }
-        fn release_specimen(&mut self, specimen: &mut Specimen) {}
-        fn tick(&mut self) -> usize {
-            0
-        }
-        fn process_inputs(&mut self, outcome: &[f64]) -> SpecimenStatus {
+        fn tick(&mut self, input: &[f64]) -> SpecimenStatus {
             SpecimenStatus::DEAD
+        }
+        fn get_world_state(&self) -> Vec<f64> {
+            vec![]
         }
     }
 

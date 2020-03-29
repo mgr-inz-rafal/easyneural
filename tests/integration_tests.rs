@@ -16,17 +16,18 @@ impl SimulatingWorld for MyWorld {
         }
     }
 
-    fn tick(&mut self) -> usize {
+    fn tick(&mut self, input: &[f64]) -> SpecimenStatus {
         self.tick += 1;
-        self.tick
-    }
 
-    fn process_inputs(&mut self, outcome: &[f64]) -> SpecimenStatus {
-        self.liveliness = self.liveliness + if outcome[0] < 0.5 { -1 } else { 1 };
+        self.liveliness = self.liveliness + if input[0] < 0.5 { -1 } else { 1 };
         match self.liveliness {
             -5..=5 => SpecimenStatus::ALIVE,
             _ => SpecimenStatus::DEAD,
         }
+    }
+
+    fn get_world_state(&self) -> Vec<f64> {
+        vec![-1.0, -1.0] // TODO: Current input values
     }
 }
 
