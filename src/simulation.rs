@@ -56,25 +56,26 @@ impl<T: SimulatingWorld> Simulation<T> {
 
 #[cfg(test)]
 mod tests {
+    use crate::simulation::{SimulatingWorld, Specimen, SpecimenStatus};
+
+    struct TestWorld;
+    impl SimulatingWorld for TestWorld {
+        fn new() -> TestWorld {
+            TestWorld {}
+        }
+        fn release_specimen(&mut self, specimen: &mut Specimen) {}
+        fn tick(&mut self) -> usize {
+            0
+        }
+        fn process_inputs(&mut self, outcome: &[f64]) -> SpecimenStatus {
+            SpecimenStatus::DEAD
+        }
+    }
+
     #[test]
     fn check_population_size() {
-        use crate::simulating_world::SimulatingWorld;
-        use crate::simulation::{Simulation, Specimen, SpecimenStatus};
+        use crate::simulation::Simulation;
         use crate::MINIMUM_POPULATION_SIZE;
-
-        struct TestWorld;
-        impl SimulatingWorld for TestWorld {
-            fn new() -> TestWorld {
-                TestWorld {}
-            }
-            fn release_specimen(&mut self, specimen: &mut Specimen) {}
-            fn tick(&mut self) -> usize {
-                0
-            }
-            fn process_inputs(&mut self, outcome: &[f64]) -> SpecimenStatus {
-                SpecimenStatus::DEAD
-            }
-        }
 
         let simulation = Simulation::<TestWorld>::new(MINIMUM_POPULATION_SIZE, &[1]);
         assert!(simulation.is_ok());
@@ -84,23 +85,8 @@ mod tests {
 
     #[test]
     fn population_too_small() {
-        use crate::simulating_world::SimulatingWorld;
-        use crate::simulation::{Simulation, Specimen, SpecimenStatus};
+        use crate::simulation::Simulation;
         use crate::MINIMUM_POPULATION_SIZE;
-
-        struct TestWorld;
-        impl SimulatingWorld for TestWorld {
-            fn new() -> TestWorld {
-                TestWorld {}
-            }
-            fn release_specimen(&mut self, specimen: &mut Specimen) {}
-            fn tick(&mut self) -> usize {
-                0
-            }
-            fn process_inputs(&mut self, outcome: &[f64]) -> SpecimenStatus {
-                SpecimenStatus::DEAD
-            }
-        }
 
         let simulation = Simulation::<TestWorld>::new(MINIMUM_POPULATION_SIZE - 1, &[1]);
         assert!(simulation.is_err());
