@@ -19,8 +19,9 @@ pub struct Specimen {
 }
 
 impl Specimen {
-    fn tick(&mut self, world_input: &[f64]) {
+    fn tick(&mut self, world_input: &[f64]) -> Vec<f64> {
         self.brain.fire(world_input);
+        self.brain.get_output()
     }
 }
 
@@ -66,8 +67,7 @@ impl<T: SimulatingWorld> Simulation<T> {
             if let Some(world) = &mut self.world {
                 let mut current_state = world.get_world_state();
                 loop {
-                    specimen.tick(&current_state);
-                    let output = specimen.brain.get_output();
+                    let output = specimen.tick(&current_state);
                     status = world.tick(&output);
                     if let SpecimenStatus::DEAD = status.specimen_status {
                         break;
