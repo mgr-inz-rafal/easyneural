@@ -7,10 +7,15 @@ pub enum SpecimenStatus {
     DEAD,
 }
 
+pub struct SimulationStatus {
+    pub specimen_status: SpecimenStatus,
+    pub current_tick: usize,
+}
+
 // TODO: To separate module
 pub struct Specimen {
     pub brain: Network,
-    fitness: isize,
+    fitness: isize, // TODO: Move to SpecimenStatus
 }
 
 impl Specimen {
@@ -56,41 +61,37 @@ impl<T: SimulatingWorld> Simulation<T> {
 
     pub fn run_simulation(&mut self) {
         let mut current_state = self.world.get_world_state();
+        let mut status;
         for specimen in &mut self.population {
             loop {
                 specimen.tick(&current_state);
                 let output = specimen.brain.get_output();
-                let status = self.world.tick(&output);
-                if let SpecimenStatus::DEAD = status {
+                status = self.world.tick(&output);
+                if let SpecimenStatus::DEAD = status.specimen_status {
                     break;
                 }
                 current_state = self.world.get_world_state();
             }
 
-            println!("Specimen died");
-            /*
-            specimen.tick(&current_state);
-            let output = specimen.brain.get_output();
-            if let SpecimenStatus::DEAD = self.world.tick(&output) {
-                //  println!("Specimen died in tick {}", current_tick);
-                println!("Specimen died");
-            }
-            */
+            println!("Specimen died in tick {}", status.current_tick);
         }
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::simulation::{SimulatingWorld, Specimen, SpecimenStatus};
+    use crate::simulation::{SimulatingWorld, SimulationStatus, SpecimenStatus};
 
     struct TestWorld;
     impl SimulatingWorld for TestWorld {
         fn new() -> TestWorld {
             TestWorld {}
         }
-        fn tick(&mut self, input: &[f64]) -> SpecimenStatus {
-            SpecimenStatus::DEAD
+        fn tick(&mut self, _: &[f64]) -> SimulationStatus {
+            SimulationStatus {
+                specimen_status: SpecimenStatus::DEAD,
+                current_tick: 0,
+            }
         }
         fn get_world_state(&self) -> Vec<f64> {
             vec![]

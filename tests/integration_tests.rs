@@ -1,7 +1,7 @@
 extern crate easyneural;
 
 use easyneural::simulating_world::SimulatingWorld;
-use easyneural::simulation::{Simulation, Specimen, SpecimenStatus};
+use easyneural::simulation::{Simulation, SimulationStatus, SpecimenStatus};
 
 struct MyWorld {
     tick: usize,
@@ -16,13 +16,19 @@ impl SimulatingWorld for MyWorld {
         }
     }
 
-    fn tick(&mut self, input: &[f64]) -> SpecimenStatus {
+    fn tick(&mut self, input: &[f64]) -> SimulationStatus {
         self.tick += 1;
 
         self.liveliness = self.liveliness + if input[0] < 0.5 { -1 } else { 1 };
+        let alive_status;
         match self.liveliness {
-            -5..=5 => SpecimenStatus::ALIVE,
-            _ => SpecimenStatus::DEAD,
+            -5..=5 => alive_status = SpecimenStatus::ALIVE,
+            _ => alive_status = SpecimenStatus::DEAD,
+        }
+
+        SimulationStatus {
+            specimen_status: alive_status,
+            current_tick: self.tick,
         }
     }
 
