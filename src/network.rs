@@ -1,14 +1,14 @@
 use crate::neuron::Neuron;
-use crate::randomizer::{DefaultRandomizer, RandomProvider};
-use if_chain::if_chain;
+use crate::randomizer::RandomProvider;
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 struct NetworkLayout {
     neurons: Vec<Neuron>,
     layers: Vec<Vec<usize>>,
 }
 
+#[derive(Clone)]
 pub struct Network {
     layout: NetworkLayout,
     activator: fn(f64) -> f64,
@@ -29,6 +29,22 @@ impl Network {
             },
             activator,
         }
+    }
+
+    pub fn get_output(&self) -> Vec<f64> {
+        let last_layer = &self
+            .layout
+            .layers
+            .last()
+            .expect("Network has no last layer");
+        last_layer
+            .iter()
+            .map(|neuron_id| {
+                self.layout.neurons[*neuron_id]
+                    .value
+                    .expect("Neuron has no calculated value")
+            })
+            .collect()
     }
 
     #[allow(dead_code)]
@@ -66,7 +82,7 @@ impl Network {
     }
 
     #[allow(dead_code)]
-    fn fire(&mut self, input_values: &[f64]) {
+    pub fn fire(&mut self, input_values: &[f64]) {
         assert!(
             self.layout.layers.len() > 0,
             "Trying to fire network with no layers"
@@ -74,7 +90,7 @@ impl Network {
         assert_eq!(
             input_values.len(),
             self.layout.layers[0].len() - 1,
-            "Incorrent number of inputs"
+            "Incorrect number of inputs"
         );
 
         Network::set_layer_values(
@@ -188,6 +204,7 @@ mod tests {
     use crate::network::*;
     #[test]
     fn structure() {
+        use crate::randomizer::DefaultRandomizer;
         use crate::BIAS_VALUE;
         let mut randomizer = DefaultRandomizer::new();
         let neurons_per_layer = [20, 30, 10];
