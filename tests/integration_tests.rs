@@ -8,6 +8,12 @@ struct MyWorld {
     liveliness: isize,
 }
 
+impl MyWorld {
+    fn get_specimen_score(&self, foo_data: f64) -> f64 {
+        self.tick as f64 / foo_data // TODO: Just some made-up formula for now
+    }
+}
+
 impl SimulatingWorld for MyWorld {
     fn new() -> MyWorld {
         MyWorld {
@@ -19,11 +25,11 @@ impl SimulatingWorld for MyWorld {
     fn tick(&mut self, input: &[f64]) -> SimulationStatus {
         self.tick += 1;
 
-        self.liveliness = self.liveliness + if input[0] < 0.5 { -1 } else { 1 };
+        self.liveliness = self.liveliness + if input[0] < 0.5 { -3 } else { 1 };
         let alive_status;
         match self.liveliness {
             -5..=5 => alive_status = SpecimenStatus::ALIVE,
-            _ => alive_status = SpecimenStatus::DEAD,
+            _ => alive_status = SpecimenStatus::DEAD(self.get_specimen_score(input[0])),
         }
 
         SimulationStatus {
@@ -33,7 +39,11 @@ impl SimulatingWorld for MyWorld {
     }
 
     fn get_world_state(&self) -> Vec<f64> {
-        vec![-1.0, -1.0] // TODO: Current input values
+        vec![
+            // TODO: For now, simulate some basic feedback from specimen
+            self.get_specimen_score(-21.0),
+            self.get_specimen_score(21.0),
+        ]
     }
 }
 
