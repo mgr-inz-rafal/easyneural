@@ -4,7 +4,7 @@ use crate::simulating_world::SimulatingWorld;
 
 pub enum SpecimenStatus {
     ALIVE,
-    DEAD,
+    DEAD(f64),
 }
 
 pub struct SimulationStatus {
@@ -69,12 +69,15 @@ impl<T: SimulatingWorld> Simulation<T> {
                 loop {
                     let output = specimen.tick(&current_state);
                     status = world.tick(&output);
-                    if let SpecimenStatus::DEAD = status.specimen_status {
+                    if let SpecimenStatus::DEAD(fitness) = status.specimen_status {
+                        println!(
+                            "Specimen died in tick {} with fitness {}",
+                            status.current_tick, fitness
+                        );
                         break;
                     }
                     current_state = world.get_world_state();
                 }
-                println!("Specimen died in tick {}", status.current_tick);
             }
         }
     }
@@ -91,7 +94,7 @@ mod tests {
         }
         fn tick(&mut self, _: &[f64]) -> SimulationStatus {
             SimulationStatus {
-                specimen_status: SpecimenStatus::DEAD,
+                specimen_status: SpecimenStatus::DEAD(-1.0),
                 current_tick: 0,
             }
         }
