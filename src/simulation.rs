@@ -64,6 +64,8 @@ impl<T: SimulatingWorld> Simulation<T> {
         if let Some(empty_parent) = parents.iter_mut().find(|parent| parent.is_none()) {
             *empty_parent = Some(index);
         } else {
+            // TODO: Note that in the future there might be more parents,
+            // for example, one might want to crossbreed more than 2 best specimens.
             let worse_parent =
                 if self.population[parents[0].expect("Parent 0 should be existent here")].fitness
                     < self.population[parents[1].expect("Parent 0 should be existent here")].fitness
