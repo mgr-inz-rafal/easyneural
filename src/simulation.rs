@@ -68,13 +68,16 @@ impl<T: SimulatingWorld> Simulation<T> {
             // for example, one might want to crossbreed more than 2 best specimens.
             let worse_parent =
                 if self.population[parents[0].expect("Parent 0 should be existent here")].fitness
-                    < self.population[parents[1].expect("Parent 0 should be existent here")].fitness
+                    < self.population[parents[1].expect("Parent 1 should be existent here")].fitness
                 {
                     0
                 } else {
                     1
                 };
-            parents[worse_parent] = Some(index);
+            let candidate_fitness = self.population[index].fitness;
+            if self.population[parents[worse_parent].unwrap()].fitness < candidate_fitness {
+                parents[worse_parent] = Some(index);
+            }
         }
     }
 
@@ -109,6 +112,7 @@ impl<T: SimulatingWorld> Simulation<T> {
 mod tests {
     use crate::simulation::{SimulatingWorld, Simulation, SimulationStatus, SpecimenStatus};
     use crate::MINIMUM_POPULATION_SIZE;
+    use if_chain::if_chain;
 
     struct TestWorld;
     impl SimulatingWorld for TestWorld {
@@ -153,6 +157,17 @@ mod tests {
         None
     }
 
+    fn is_selected_as_parent(index: usize, parents: &[Option<usize>]) -> bool {
+        if_chain! {
+            if let Some(parent1) = parents[0];
+            if let Some(parent2) = parents[1];
+            then {
+                return if parent1 == index || parent2 == index { true} else {false};
+            }
+        }
+        false
+    }
+
     #[test]
     fn selecting_parents_just_one() {
         const TEST_POPULATION_SIZE: usize = 5;
@@ -178,14 +193,63 @@ mod tests {
 
     #[test]
     fn selecting_parents_pick_best() {
-        const TEST_POPULATION_SIZE: usize = 5;
+        const TEST_POPULATION_SIZE: usize = 120;
         let mut parents: [Option<usize>; 2] = [None, None];
         let mut simulation =
             prepare_simulation(TEST_POPULATION_SIZE).expect("Unable to create simulation");
         for i in 0..TEST_POPULATION_SIZE {
             simulation.add_parent_candidate(i, &mut parents);
         }
-        assert_eq!(parents[0].expect("Parent 1 not set correctly"), 4);
-        assert_eq!(parents[1].expect("Parent 2 not set correctly"), 3);
+        assert!(is_selected_as_parent(TEST_POPULATION_SIZE - 1, &parents));
+        assert!(is_selected_as_parent(TEST_POPULATION_SIZE - 2, &parents));
     }
+
+    #[test]
+    fn selecting_parents_pick_best_reversed() {
+        const TEST_POPULATION_SIZE: usize = 10;
+        let mut parents: [Option<usize>; 2] = [None, None];
+        let mut simulation =
+            prepare_simulation(TEST_POPULATION_SIZE).expect("Unable to create simulation");
+        for i in (0..TEST_POPULATION_SIZE).rev() {
+            simulation.add_parent_candidate(i, &mut parents);
+        }
+
+        assert!(is_selected_as_parent(TEST_POPULATION_SIZE - 1, &parents));
+        assert!(is_selected_as_parent(TEST_POPULATION_SIZE - 2, &parents));
+    }
+
+    #[test]
+    fn selecting_parents_overwrite_one() {
+        const TEST_POPULATION_SIZE: usize = 10;
+        const TEST_MIDDLE_POP: usize = TEST_POPULATION_SIZE / 2;
+        let mut parents: [Option<usize>; 2] = [None, None];
+        let mut simulation =
+            prepare_simulation(TEST_POPULATION_SIZE).expect("Unable to create simulation");
+        for _ in 0..10 {
+            simulation.add_parent_candidate(TEST_MIDDLE_POP, &mut parents);
+        }
+        simulation.add_parent_candidate(TEST_POPULATION_SIZE - 1, &mut parents);
+
+        assert!(is_selected_as_parent(TEST_POPULATION_SIZE - 1, &parents));
+        assert!(is_selected_as_parent(TEST_MIDDLE_POP, &parents));
+    }
+
+    #[test]
+    fn selecting_parents_overwrite_two() {
+        const TEST_POPULATION_SIZE: usize = 10;
+        const TEST_MIDDLE_POP: usize = TEST_POPULATION_SIZE / 2;
+        let mut parents: [Option<usize>; 2] = [None, None];
+        let mut simulation =
+            prepare_simulation(TEST_POPULATION_SIZE).expect("Unable to create simulation");
+        for _ in 0..10 {
+            simulation.add_parent_candidate(TEST_MIDDLE_POP, &mut parents);
+        }
+        simulation.add_parent_candidate(TEST_POPULATION_SIZE - 1, &mut parents);
+        simulation.add_parent_candidate(TEST_POPULATION_SIZE - 2, &mut parents);
+
+        assert!(is_selected_as_parent(TEST_POPULATION_SIZE - 1, &parents));
+        assert!(is_selected_as_parent(TEST_POPULATION_SIZE - 2, &parents));
+    }
+
+    // TODO: Do not allow parents 0 and 1 to be set to the same specimen
 }
