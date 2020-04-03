@@ -167,6 +167,7 @@ impl<'a> NetworkBuilder<'a> {
         if let Some(neurons_per_layer) = self.neurons_per_layer {
             let mut net = Network::new(neurons_per_layer, self.activator.unwrap());
 
+            // TODO: Do relocation testing only in unit-tests
             net.layout.neurons.push(Neuron::new(true, 0, &mut None));
             let neuron_buffer_address = &net.layout.neurons[0] as *const _;
             net.layout.neurons.clear();

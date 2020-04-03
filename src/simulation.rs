@@ -15,7 +15,7 @@ pub struct SimulationStatus {
 // TODO: To separate module
 pub struct Specimen {
     pub brain: Network,
-    fitness: isize, // TODO: Move to SpecimenStatus
+    fitness: f64, // TODO: Move to SpecimenStatus
 }
 
 impl Specimen {
@@ -54,15 +54,38 @@ impl<T: SimulatingWorld> Simulation<T> {
             .take(population_size)
             .map(|network| Specimen {
                 brain: network,
-                fitness: 0,
+                fitness: 0.0,
             })
             .collect(),
         })
     }
 
+    fn add_parent_candidate(&mut self, index: usize, parents: &mut [Option<usize>]) {
+        if let Some(empty_parent) = parents.iter_mut().find(|parent| parent.is_none()) {
+            *empty_parent = Some(index);
+        } else {
+            // TODO: Note that in the future there might be more parents,
+            // for example, one might want to crossbreed more than 2 best specimens.
+            let worse_parent =
+                if self.population[parents[0].expect("Parent 0 should be existent here")].fitness
+                    < self.population[parents[1].expect("Parent 1 should be existent here")].fitness
+                {
+                    0
+                } else {
+                    1
+                };
+            let candidate_fitness = self.population[index].fitness;
+            if self.population[parents[worse_parent].unwrap()].fitness < candidate_fitness {
+                parents[worse_parent] = Some(index);
+            }
+        }
+    }
+
     pub fn run_simulation(&mut self) {
         let mut status;
-        for specimen in &mut self.population {
+        let mut parents: [Option<usize>; 2] = [None, None];
+        for specimen_index in 0..self.population.len() {
+            let specimen = &mut self.population[specimen_index];
             self.world = Some(T::new());
             if let Some(world) = &mut self.world {
                 let mut current_state = world.get_world_state();
@@ -74,6 +97,8 @@ impl<T: SimulatingWorld> Simulation<T> {
                             "Specimen died in tick {} with fitness {}",
                             status.current_tick, fitness
                         );
+                        specimen.fitness = fitness;
+                        self.add_parent_candidate(specimen_index, &mut parents);
                         break;
                     }
                     current_state = world.get_world_state();
@@ -85,7 +110,9 @@ impl<T: SimulatingWorld> Simulation<T> {
 
 #[cfg(test)]
 mod tests {
-    use crate::simulation::{SimulatingWorld, SimulationStatus, SpecimenStatus};
+    use crate::simulation::{SimulatingWorld, Simulation, SimulationStatus, SpecimenStatus};
+    use crate::MINIMUM_POPULATION_SIZE;
+    use if_chain::if_chain;
 
     struct TestWorld;
     impl SimulatingWorld for TestWorld {
@@ -105,9 +132,6 @@ mod tests {
 
     #[test]
     fn check_population_size() {
-        use crate::simulation::Simulation;
-        use crate::MINIMUM_POPULATION_SIZE;
-
         let simulation = Simulation::<TestWorld>::new(MINIMUM_POPULATION_SIZE, &[1]);
         assert!(simulation.is_ok());
         let simulation = simulation.unwrap();
@@ -116,10 +140,116 @@ mod tests {
 
     #[test]
     fn population_too_small() {
-        use crate::simulation::Simulation;
-        use crate::MINIMUM_POPULATION_SIZE;
-
         let simulation = Simulation::<TestWorld>::new(MINIMUM_POPULATION_SIZE - 1, &[1]);
         assert!(simulation.is_err());
     }
+
+    fn prepare_simulation(population_size: usize) -> Option<Simulation<TestWorld>> {
+        let simulation = Simulation::<TestWorld>::new(population_size, &[1]);
+        if let Ok(mut simulation) = simulation {
+            simulation
+                .population
+                .iter_mut()
+                .enumerate()
+                .for_each(|(index, pop)| pop.fitness = (index * 2) as f64);
+            return Some(simulation);
+        }
+        None
+    }
+
+    fn is_selected_as_parent(index: usize, parents: &[Option<usize>]) -> bool {
+        if_chain! {
+            if let Some(parent1) = parents[0];
+            if let Some(parent2) = parents[1];
+            then {
+                return if parent1 == index || parent2 == index { true} else {false};
+            }
+        }
+        false
+    }
+
+    #[test]
+    fn selecting_parents_just_one() {
+        const TEST_POPULATION_SIZE: usize = 5;
+        let mut parents: [Option<usize>; 2] = [None, None];
+        let mut simulation =
+            prepare_simulation(TEST_POPULATION_SIZE).expect("Unable to create simulation");
+        simulation.add_parent_candidate(1, &mut parents);
+        assert_eq!(parents[0].expect("Parent 1 not set correctly"), 1);
+        assert!(parents[1].is_none(), "Parent 2 should not be set here");
+    }
+
+    #[test]
+    fn selecting_parents_just_two() {
+        const TEST_POPULATION_SIZE: usize = 5;
+        let mut parents: [Option<usize>; 2] = [None, None];
+        let mut simulation =
+            prepare_simulation(TEST_POPULATION_SIZE).expect("Unable to create simulation");
+        simulation.add_parent_candidate(1, &mut parents);
+        simulation.add_parent_candidate(2, &mut parents);
+        assert_eq!(parents[0].expect("Parent 1 not set correctly"), 1);
+        assert_eq!(parents[1].expect("Parent 2 not set correctly"), 2);
+    }
+
+    #[test]
+    fn selecting_parents_pick_best() {
+        const TEST_POPULATION_SIZE: usize = 120;
+        let mut parents: [Option<usize>; 2] = [None, None];
+        let mut simulation =
+            prepare_simulation(TEST_POPULATION_SIZE).expect("Unable to create simulation");
+        for i in 0..TEST_POPULATION_SIZE {
+            simulation.add_parent_candidate(i, &mut parents);
+        }
+        assert!(is_selected_as_parent(TEST_POPULATION_SIZE - 1, &parents));
+        assert!(is_selected_as_parent(TEST_POPULATION_SIZE - 2, &parents));
+    }
+
+    #[test]
+    fn selecting_parents_pick_best_reversed() {
+        const TEST_POPULATION_SIZE: usize = 10;
+        let mut parents: [Option<usize>; 2] = [None, None];
+        let mut simulation =
+            prepare_simulation(TEST_POPULATION_SIZE).expect("Unable to create simulation");
+        for i in (0..TEST_POPULATION_SIZE).rev() {
+            simulation.add_parent_candidate(i, &mut parents);
+        }
+
+        assert!(is_selected_as_parent(TEST_POPULATION_SIZE - 1, &parents));
+        assert!(is_selected_as_parent(TEST_POPULATION_SIZE - 2, &parents));
+    }
+
+    #[test]
+    fn selecting_parents_overwrite_one() {
+        const TEST_POPULATION_SIZE: usize = 10;
+        const TEST_MIDDLE_POP: usize = TEST_POPULATION_SIZE / 2;
+        let mut parents: [Option<usize>; 2] = [None, None];
+        let mut simulation =
+            prepare_simulation(TEST_POPULATION_SIZE).expect("Unable to create simulation");
+        for _ in 0..10 {
+            simulation.add_parent_candidate(TEST_MIDDLE_POP, &mut parents);
+        }
+        simulation.add_parent_candidate(TEST_POPULATION_SIZE - 1, &mut parents);
+
+        assert!(is_selected_as_parent(TEST_POPULATION_SIZE - 1, &parents));
+        assert!(is_selected_as_parent(TEST_MIDDLE_POP, &parents));
+    }
+
+    #[test]
+    fn selecting_parents_overwrite_two() {
+        const TEST_POPULATION_SIZE: usize = 10;
+        const TEST_MIDDLE_POP: usize = TEST_POPULATION_SIZE / 2;
+        let mut parents: [Option<usize>; 2] = [None, None];
+        let mut simulation =
+            prepare_simulation(TEST_POPULATION_SIZE).expect("Unable to create simulation");
+        for _ in 0..10 {
+            simulation.add_parent_candidate(TEST_MIDDLE_POP, &mut parents);
+        }
+        simulation.add_parent_candidate(TEST_POPULATION_SIZE - 1, &mut parents);
+        simulation.add_parent_candidate(TEST_POPULATION_SIZE - 2, &mut parents);
+
+        assert!(is_selected_as_parent(TEST_POPULATION_SIZE - 1, &parents));
+        assert!(is_selected_as_parent(TEST_POPULATION_SIZE - 2, &parents));
+    }
+
+    // TODO: Do not allow parents 0 and 1 to be set to the same specimen
 }
