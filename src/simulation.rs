@@ -112,7 +112,6 @@ impl<T: SimulatingWorld> Simulation<T> {
 mod tests {
     use crate::simulation::{SimulatingWorld, Simulation, SimulationStatus, SpecimenStatus};
     use crate::MINIMUM_POPULATION_SIZE;
-    use if_chain::if_chain;
 
     struct TestWorld;
     impl SimulatingWorld for TestWorld {
@@ -158,14 +157,10 @@ mod tests {
     }
 
     fn is_selected_as_parent(index: usize, parents: &[Option<usize>]) -> bool {
-        if_chain! {
-            if let Some(parent1) = parents[0];
-            if let Some(parent2) = parents[1];
-            then {
-                return if parent1 == index || parent2 == index { true} else {false};
-            }
-        }
-        false
+        parents
+            .iter()
+            .find(|&&parent| parent == Some(index))
+            .is_some()
     }
 
     #[test]
@@ -175,7 +170,7 @@ mod tests {
         let mut simulation =
             prepare_simulation(TEST_POPULATION_SIZE).expect("Unable to create simulation");
         simulation.add_parent_candidate(1, &mut parents);
-        assert_eq!(parents[0].expect("Parent 1 not set correctly"), 1);
+        assert!(is_selected_as_parent(1, &parents));
         assert!(parents[1].is_none(), "Parent 2 should not be set here");
     }
 
