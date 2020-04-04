@@ -60,27 +60,32 @@ impl<T: SimulatingWorld> Simulation<T> {
         })
     }
 
-    fn add_parent_candidate(&mut self, index: usize, parents: &mut [Option<usize>]) {
-        if let Some(empty_parent) = parents.iter_mut().find(|parent| parent.is_none()) {
-            *empty_parent = Some(index);
-        } else {
-            if parents[0].unwrap() == index || parents[1].unwrap() == index {
-                return;
-            }
+    fn is_selected_as_parent(&self, index: usize, parents: &[Option<usize>]) -> bool {
+        parents
+            .iter()
+            .find(|&&parent| parent == Some(index))
+            .is_some()
+    }
 
-            // TODO: Note that in the future there might be more parents,
-            // for example, one might want to crossbreed more than 2 best specimens.
-            let worse_parent =
-                if self.population[parents[0].expect("Parent 0 should be existent here")].fitness
-                    < self.population[parents[1].expect("Parent 1 should be existent here")].fitness
-                {
-                    0
-                } else {
-                    1
-                };
-            let candidate_fitness = self.population[index].fitness;
-            if self.population[parents[worse_parent].unwrap()].fitness < candidate_fitness {
-                parents[worse_parent] = Some(index);
+    fn add_parent_candidate(&mut self, candindate_index: usize, parents: &mut [Option<usize>]) {
+        if let Some(empty_parent) = parents.iter_mut().find(|parent| parent.is_none()) {
+            // Replace empty parent with candidate
+            *empty_parent = Some(candindate_index);
+        } else {
+            let worse_parent_index = match parents
+                .iter()
+                .enumerate()
+                .min_by_key(|parent| parent.1.unwrap())
+            {
+                Some(worse_parent) => worse_parent.0,
+                None => 0,
+            };
+            let candidate = &self.population[candindate_index];
+            let worse_parent = &self.population[parents[worse_parent_index].unwrap()];
+            if !self.is_selected_as_parent(candindate_index, parents)
+                && candidate.fitness > worse_parent.fitness
+            {
+                parents[worse_parent_index] = Some(candindate_index);
             }
         }
     }
@@ -160,13 +165,6 @@ mod tests {
         None
     }
 
-    fn is_selected_as_parent(index: usize, parents: &[Option<usize>]) -> bool {
-        parents
-            .iter()
-            .find(|&&parent| parent == Some(index))
-            .is_some()
-    }
-
     #[test]
     fn selecting_parents_just_one() {
         const TEST_POPULATION_SIZE: usize = 5;
@@ -174,7 +172,7 @@ mod tests {
         let mut simulation =
             prepare_simulation(TEST_POPULATION_SIZE).expect("Unable to create simulation");
         simulation.add_parent_candidate(1, &mut parents);
-        assert!(is_selected_as_parent(1, &parents));
+        assert!(simulation.is_selected_as_parent(1, &parents));
         assert!(parents[1].is_none(), "Parent 2 should not be set here");
     }
 
@@ -186,8 +184,8 @@ mod tests {
             prepare_simulation(TEST_POPULATION_SIZE).expect("Unable to create simulation");
         simulation.add_parent_candidate(1, &mut parents);
         simulation.add_parent_candidate(2, &mut parents);
-        assert!(is_selected_as_parent(1, &parents));
-        assert!(is_selected_as_parent(2, &parents));
+        assert!(simulation.is_selected_as_parent(1, &parents));
+        assert!(simulation.is_selected_as_parent(2, &parents));
     }
 
     #[test]
@@ -199,8 +197,8 @@ mod tests {
         for i in 0..TEST_POPULATION_SIZE {
             simulation.add_parent_candidate(i, &mut parents);
         }
-        assert!(is_selected_as_parent(TEST_POPULATION_SIZE - 1, &parents));
-        assert!(is_selected_as_parent(TEST_POPULATION_SIZE - 2, &parents));
+        assert!(simulation.is_selected_as_parent(TEST_POPULATION_SIZE - 1, &parents));
+        assert!(simulation.is_selected_as_parent(TEST_POPULATION_SIZE - 2, &parents));
     }
 
     #[test]
@@ -213,8 +211,8 @@ mod tests {
             simulation.add_parent_candidate(i, &mut parents);
         }
 
-        assert!(is_selected_as_parent(TEST_POPULATION_SIZE - 1, &parents));
-        assert!(is_selected_as_parent(TEST_POPULATION_SIZE - 2, &parents));
+        assert!(simulation.is_selected_as_parent(TEST_POPULATION_SIZE - 1, &parents));
+        assert!(simulation.is_selected_as_parent(TEST_POPULATION_SIZE - 2, &parents));
     }
 
     #[test]
@@ -229,8 +227,8 @@ mod tests {
         }
         simulation.add_parent_candidate(TEST_POPULATION_SIZE - 1, &mut parents);
 
-        assert!(is_selected_as_parent(TEST_POPULATION_SIZE - 1, &parents));
-        assert!(is_selected_as_parent(TEST_MIDDLE_POP, &parents));
+        assert!(simulation.is_selected_as_parent(TEST_POPULATION_SIZE - 1, &parents));
+        assert!(simulation.is_selected_as_parent(TEST_MIDDLE_POP, &parents));
     }
 
     #[test]
@@ -246,8 +244,8 @@ mod tests {
         simulation.add_parent_candidate(TEST_POPULATION_SIZE - 1, &mut parents);
         simulation.add_parent_candidate(TEST_POPULATION_SIZE - 2, &mut parents);
 
-        assert!(is_selected_as_parent(TEST_POPULATION_SIZE - 1, &parents));
-        assert!(is_selected_as_parent(TEST_POPULATION_SIZE - 2, &parents));
+        assert!(simulation.is_selected_as_parent(TEST_POPULATION_SIZE - 1, &parents));
+        assert!(simulation.is_selected_as_parent(TEST_POPULATION_SIZE - 2, &parents));
     }
 
     #[test]
@@ -262,7 +260,7 @@ mod tests {
         simulation.add_parent_candidate(TEST_MIDDLE_POP, &mut parents);
         simulation.add_parent_candidate(TEST_BEST_POP, &mut parents);
         simulation.add_parent_candidate(TEST_BEST_POP, &mut parents);
-        assert!(is_selected_as_parent(TEST_BEST_POP, &parents));
-        assert!(is_selected_as_parent(TEST_MIDDLE_POP, &parents));
+        assert!(simulation.is_selected_as_parent(TEST_BEST_POP, &parents));
+        assert!(simulation.is_selected_as_parent(TEST_MIDDLE_POP, &parents));
     }
 }
