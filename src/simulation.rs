@@ -64,6 +64,10 @@ impl<T: SimulatingWorld> Simulation<T> {
         if let Some(empty_parent) = parents.iter_mut().find(|parent| parent.is_none()) {
             *empty_parent = Some(index);
         } else {
+            if parents[0].unwrap() == index || parents[1].unwrap() == index {
+                return;
+            }
+
             // TODO: Note that in the future there might be more parents,
             // for example, one might want to crossbreed more than 2 best specimens.
             let worse_parent =
@@ -182,8 +186,8 @@ mod tests {
             prepare_simulation(TEST_POPULATION_SIZE).expect("Unable to create simulation");
         simulation.add_parent_candidate(1, &mut parents);
         simulation.add_parent_candidate(2, &mut parents);
-        assert_eq!(parents[0].expect("Parent 1 not set correctly"), 1);
-        assert_eq!(parents[1].expect("Parent 2 not set correctly"), 2);
+        assert!(is_selected_as_parent(1, &parents));
+        assert!(is_selected_as_parent(2, &parents));
     }
 
     #[test]
@@ -246,5 +250,19 @@ mod tests {
         assert!(is_selected_as_parent(TEST_POPULATION_SIZE - 2, &parents));
     }
 
-    // TODO: Do not allow parents 0 and 1 to be set to the same specimen
+    #[test]
+    fn selecting_parents_no_single_predominance() {
+        const TEST_POPULATION_SIZE: usize = 10;
+        const TEST_MIDDLE_POP: usize = TEST_POPULATION_SIZE / 2;
+        const TEST_BEST_POP: usize = TEST_POPULATION_SIZE - 1;
+        let mut parents: [Option<usize>; 2] = [None, None];
+        let mut simulation =
+            prepare_simulation(TEST_POPULATION_SIZE).expect("Unable to create simulation");
+        simulation.add_parent_candidate(TEST_MIDDLE_POP, &mut parents);
+        simulation.add_parent_candidate(TEST_MIDDLE_POP, &mut parents);
+        simulation.add_parent_candidate(TEST_BEST_POP, &mut parents);
+        simulation.add_parent_candidate(TEST_BEST_POP, &mut parents);
+        assert!(is_selected_as_parent(TEST_BEST_POP, &parents));
+        assert!(is_selected_as_parent(TEST_MIDDLE_POP, &parents));
+    }
 }
