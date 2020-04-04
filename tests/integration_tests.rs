@@ -1,7 +1,8 @@
 extern crate easyneural;
 
 use easyneural::simulating_world::SimulatingWorld;
-use easyneural::simulation::{Simulation, SimulationStatus, SpecimenStatus};
+use easyneural::simulation::{Simulation, SimulationStatus};
+use easyneural::specimen::SpecimenStatus;
 
 struct MyWorld {
     tick: usize,

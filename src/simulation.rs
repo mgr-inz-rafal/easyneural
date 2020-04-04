@@ -1,32 +1,15 @@
-use crate::network::{Network, NetworkBuilder};
+use crate::network::NetworkBuilder;
 use crate::randomizer::DefaultRandomizer;
 use crate::simulating_world::SimulatingWorld;
-
-pub enum SpecimenStatus {
-    ALIVE,
-    DEAD(f64),
-}
+use crate::specimen::{Specimen, SpecimenStatus};
 
 pub struct SimulationStatus {
     pub specimen_status: SpecimenStatus,
     pub current_tick: usize,
 }
 
-// TODO: To separate module
-pub struct Specimen {
-    pub brain: Network,
-    fitness: f64, // TODO: Move to SpecimenStatus
-}
-
-impl Specimen {
-    fn tick(&mut self, world_input: &[f64]) -> Vec<f64> {
-        self.brain.fire(world_input);
-        self.brain.get_output()
-    }
-}
-
 pub struct Simulation<T: SimulatingWorld> {
-    pub population: Vec<Specimen>,
+    pub(crate) population: Vec<Specimen>,
     pub world: Option<T>,
     parents: [Option<usize>; 2],
 }
