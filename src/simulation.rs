@@ -1,4 +1,4 @@
-use crate::network::NetworkBuilder;
+use crate::network::{NetworkBuilder, NetworkLayout};
 use crate::randomizer::DefaultRandomizer;
 use crate::simulating_world::SimulatingWorld;
 use crate::specimen::{Specimen, SpecimenStatus};
@@ -76,7 +76,7 @@ impl<T: SimulatingWorld> Simulation<T> {
         }
     }
 
-    pub fn run_simulation(&mut self) -> Result<[usize; 2], &str> {
+    pub fn run_simulation(&mut self) -> Result<[&NetworkLayout; 2], &str> {
         let mut status;
         for specimen_index in 0..self.population.len() {
             let specimen = &mut self.population[specimen_index];
@@ -110,7 +110,10 @@ impl<T: SimulatingWorld> Simulation<T> {
                 "Simulation finished w/o nominating best parents. This is a bug, please report",
             );
         }
-        Ok([self.parents[0].unwrap(), self.parents[1].unwrap()])
+        Ok([
+            &self.population[self.parents[0].unwrap()].brain.layout,
+            &self.population[self.parents[1].unwrap()].brain.layout,
+        ])
     }
 }
 

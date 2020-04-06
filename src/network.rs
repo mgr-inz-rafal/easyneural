@@ -3,14 +3,14 @@ use crate::randomizer::RandomProvider;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone)]
-struct NetworkLayout {
-    neurons: Vec<Neuron>,
-    layers: Vec<Vec<usize>>,
+pub struct NetworkLayout {
+    pub neurons: Vec<Neuron>,
+    pub(crate) layers: Vec<Vec<usize>>,
 }
 
 #[derive(Clone)]
 pub struct Network {
-    layout: NetworkLayout,
+    pub(crate) layout: NetworkLayout,
     activator: fn(f64) -> f64,
 }
 

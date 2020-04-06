@@ -1,5 +1,7 @@
 extern crate easyneural;
 
+use easyneural::genetic::mutate;
+use easyneural::network::NetworkLayout;
 use easyneural::simulating_world::SimulatingWorld;
 use easyneural::simulation::{Simulation, SimulationStatus};
 use easyneural::specimen::SpecimenStatus;
@@ -54,6 +56,7 @@ fn test_run_training_session() -> Result<(), String> {
 
     let neurons_per_layer = [2, 4, 5, 1];
     let mut session = Simulation::<MyWorld>::new(POPULATION_SIZE, &neurons_per_layer)?;
-    session.run_simulation()?;
+    let best_pops = session.run_simulation()?;
+    let new_population = mutate(best_pops);
     Ok(())
 }

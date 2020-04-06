@@ -2,8 +2,8 @@ use crate::randomizer::RandomProvider;
 use crate::BIAS_VALUE;
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Clone)]
-pub(crate) struct Neuron {
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct Neuron {
     pub(crate) value: Option<f64>,
     bias: bool,
     pub(crate) inputs: Vec<f64>,
