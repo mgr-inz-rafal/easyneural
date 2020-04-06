@@ -54,7 +54,6 @@ fn test_run_training_session() -> Result<(), String> {
 
     let neurons_per_layer = [2, 4, 5, 1];
     let mut session = Simulation::<MyWorld>::new(POPULATION_SIZE, &neurons_per_layer)?;
-    session.run_simulation();
-
+    session.run_simulation()?;
     Ok(())
 }

@@ -76,7 +76,7 @@ impl<T: SimulatingWorld> Simulation<T> {
         }
     }
 
-    pub fn run_simulation(&mut self) {
+    pub fn run_simulation(&mut self) -> Result<[usize; 2], &str> {
         let mut status;
         for specimen_index in 0..self.population.len() {
             let specimen = &mut self.population[specimen_index];
@@ -99,6 +99,18 @@ impl<T: SimulatingWorld> Simulation<T> {
                 }
             }
         }
+
+        if self
+            .parents
+            .iter_mut()
+            .find(|parent| parent.is_none())
+            .is_some()
+        {
+            return Err(
+                "Simulation finished w/o nominating best parents. This is a bug, please report",
+            );
+        }
+        Ok([self.parents[0].unwrap(), self.parents[1].unwrap()])
     }
 }
 
