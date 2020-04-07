@@ -1,4 +1,15 @@
 use crate::network::NetworkLayout;
+use rand::Rng;
+
+const MUTATION_PROBABILITY: f64 = 0.1;
+
+fn should_mutate(rng: &mut rand::rngs::ThreadRng) -> bool {
+    if rng.gen::<f64>() < MUTATION_PROBABILITY {
+        true
+    } else {
+        false
+    }
+}
 
 fn crossover(parents: [&NetworkLayout; 2]) -> [NetworkLayout; 2] {
     let crossover_point = parents[0].neurons.len() / 2;
@@ -9,8 +20,23 @@ fn crossover(parents: [&NetworkLayout; 2]) -> [NetworkLayout; 2] {
     [offspring_1, offspring_2]
 }
 
-pub fn mutate(parents: [&NetworkLayout; 2]) {
-    let mixed_genes = crossover(parents);
+fn mutate(mut parents: [NetworkLayout; 2]) -> [NetworkLayout; 2] {
+    let mut rng = rand::thread_rng();
+    parents.iter_mut().for_each(|parent| {
+        parent.neurons.iter_mut().for_each(|neuron| {
+            neuron.inputs.iter_mut().for_each(|input| {
+                if should_mutate(&mut rng) {
+                    *input = 0.0;
+                }
+            })
+        });
+    });
+
+    parents
+}
+
+pub fn evolve(parents: [&NetworkLayout; 2]) -> [NetworkLayout; 2] {
+    mutate(crossover(parents))
 }
 
 #[cfg(test)]
