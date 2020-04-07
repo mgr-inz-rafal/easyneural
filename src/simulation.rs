@@ -1,3 +1,4 @@
+use crate::genetic::{crossover, mutate};
 use crate::network::{NetworkBuilder, NetworkLayout};
 use crate::randomizer::{DefaultRandomizer, RandomProvider};
 use crate::simulating_world::SimulatingWorld;
@@ -12,13 +13,14 @@ pub struct Simulation<T: SimulatingWorld> {
     pub(crate) population: Vec<Specimen>,
     pub world: Option<T>,
     parents: [Option<usize>; 2],
+    randomizer: Box<dyn RandomProvider>,
 }
 
 impl<T: SimulatingWorld> Simulation<T> {
     pub fn new(
         population_size: usize,
         neurons_per_layer: &[usize],
-        randomizer: &mut dyn RandomProvider,
+        randomizer: Box<dyn RandomProvider>,
     ) -> Result<Simulation<T>, String> {
         use crate::MINIMUM_POPULATION_SIZE;
 
@@ -33,7 +35,7 @@ impl<T: SimulatingWorld> Simulation<T> {
             population: std::iter::repeat_with(|| {
                 NetworkBuilder::new()
                     .with_neurons_per_layer(&neurons_per_layer)
-                    .with_randomizer(&mut DefaultRandomizer::new())
+                    .with_randomizer(&mut DefaultRandomizer::new()) // TODO: Borro self.randomizer here
                     .build()
             })
             .take(population_size)
@@ -43,7 +45,12 @@ impl<T: SimulatingWorld> Simulation<T> {
             })
             .collect(),
             parents: [None, None],
+            randomizer,
         })
+    }
+
+    pub fn evolve(&mut self, parents: [NetworkLayout; 2]) -> [NetworkLayout; 2] {
+        mutate(crossover(parents), &mut self.randomizer)
     }
 
     fn is_selected_as_parent(&self, index: usize) -> bool {
@@ -77,7 +84,7 @@ impl<T: SimulatingWorld> Simulation<T> {
         }
     }
 
-    pub fn run_simulation(&mut self) -> Result<[&NetworkLayout; 2], &str> {
+    pub fn run_simulation(&mut self) -> Result<[NetworkLayout; 2], &str> {
         let mut status;
         for specimen_index in 0..self.population.len() {
             let specimen = &mut self.population[specimen_index];
@@ -112,8 +119,14 @@ impl<T: SimulatingWorld> Simulation<T> {
             );
         }
         Ok([
-            &self.population[self.parents[0].unwrap()].brain.layout,
-            &self.population[self.parents[1].unwrap()].brain.layout,
+            self.population[self.parents[0].unwrap()]
+                .brain
+                .layout
+                .clone(),
+            self.population[self.parents[1].unwrap()]
+                .brain
+                .layout
+                .clone(),
         ])
     }
 }
@@ -141,8 +154,8 @@ mod tests {
     }
 
     fn prepare_simulation(population_size: usize) -> Option<Simulation<TestWorld>> {
-        let mut randomizer = DefaultRandomizer::new();
-        let simulation = Simulation::<TestWorld>::new(population_size, &[1], &mut randomizer);
+        let randomizer = DefaultRandomizer::new();
+        let simulation = Simulation::<TestWorld>::new(population_size, &[1], Box::new(randomizer));
         if let Ok(mut simulation) = simulation {
             simulation
                 .population

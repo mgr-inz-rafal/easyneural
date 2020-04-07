@@ -1,4 +1,5 @@
 use crate::network::NetworkLayout;
+use crate::randomizer::RandomProvider;
 use rand::Rng;
 
 const MUTATION_PROBABILITY: f64 = 0.1;
@@ -11,7 +12,7 @@ fn should_mutate(rng: &mut rand::rngs::ThreadRng) -> bool {
     }
 }
 
-fn crossover(parents: [&NetworkLayout; 2]) -> [NetworkLayout; 2] {
+pub(crate) fn crossover(parents: [NetworkLayout; 2]) -> [NetworkLayout; 2] {
     let crossover_point = parents[0].neurons.len() / 2;
     let (mut offspring_1, mut offspring_2) = (parents[0].clone(), parents[1].clone());
     for i in 0..crossover_point {
@@ -20,23 +21,22 @@ fn crossover(parents: [&NetworkLayout; 2]) -> [NetworkLayout; 2] {
     [offspring_1, offspring_2]
 }
 
-fn mutate(mut parents: [NetworkLayout; 2]) -> [NetworkLayout; 2] {
+pub(crate) fn mutate(
+    mut parents: [NetworkLayout; 2],
+    randomizer: &mut Box<dyn RandomProvider>,
+) -> [NetworkLayout; 2] {
     let mut rng = rand::thread_rng();
     parents.iter_mut().for_each(|parent| {
         parent.neurons.iter_mut().for_each(|neuron| {
             neuron.inputs.iter_mut().for_each(|input| {
                 if should_mutate(&mut rng) {
-                    *input = 0.0;
+                    *input = randomizer.get_number();
                 }
             })
         });
     });
 
     parents
-}
-
-pub fn evolve(parents: [&NetworkLayout; 2]) -> [NetworkLayout; 2] {
-    mutate(crossover(parents))
 }
 
 #[cfg(test)]
@@ -80,7 +80,7 @@ mod tests {
         // After crossover:
         //      6.0 - 7.0 - 3.0 - 4.0 -  5.0
         //      1.0 - 2.0 - 8.0 - 9.0 - 10.0
-        let [offspring_1, offspring_2] = crossover([&pop1, &pop2]);
+        let [offspring_1, offspring_2] = crossover([pop1, pop2]);
         offspring_1
             .neurons
             .iter()
