@@ -1,5 +1,5 @@
 use crate::network::{NetworkBuilder, NetworkLayout};
-use crate::randomizer::DefaultRandomizer;
+use crate::randomizer::{DefaultRandomizer, RandomProvider};
 use crate::simulating_world::SimulatingWorld;
 use crate::specimen::{Specimen, SpecimenStatus};
 
@@ -18,6 +18,7 @@ impl<T: SimulatingWorld> Simulation<T> {
     pub fn new(
         population_size: usize,
         neurons_per_layer: &[usize],
+        randomizer: &mut dyn RandomProvider,
     ) -> Result<Simulation<T>, String> {
         use crate::MINIMUM_POPULATION_SIZE;
 
@@ -119,6 +120,7 @@ impl<T: SimulatingWorld> Simulation<T> {
 
 #[cfg(test)]
 mod tests {
+    use crate::randomizer::DefaultRandomizer;
     use crate::simulation::{SimulatingWorld, Simulation, SimulationStatus, SpecimenStatus};
     use crate::MINIMUM_POPULATION_SIZE;
 
@@ -138,22 +140,9 @@ mod tests {
         }
     }
 
-    #[test]
-    fn check_population_size() {
-        let simulation = Simulation::<TestWorld>::new(MINIMUM_POPULATION_SIZE, &[1]);
-        assert!(simulation.is_ok());
-        let simulation = simulation.unwrap();
-        assert_eq!(simulation.population.len(), MINIMUM_POPULATION_SIZE);
-    }
-
-    #[test]
-    fn population_too_small() {
-        let simulation = Simulation::<TestWorld>::new(MINIMUM_POPULATION_SIZE - 1, &[1]);
-        assert!(simulation.is_err());
-    }
-
     fn prepare_simulation(population_size: usize) -> Option<Simulation<TestWorld>> {
-        let simulation = Simulation::<TestWorld>::new(population_size, &[1]);
+        let mut randomizer = DefaultRandomizer::new();
+        let simulation = Simulation::<TestWorld>::new(population_size, &[1], &mut randomizer);
         if let Ok(mut simulation) = simulation {
             simulation
                 .population
@@ -163,6 +152,19 @@ mod tests {
             return Some(simulation);
         }
         None
+    }
+
+    #[test]
+    fn check_population_size() {
+        let simulation =
+            prepare_simulation(MINIMUM_POPULATION_SIZE).expect("Unable to create simulation");
+        assert_eq!(simulation.population.len(), MINIMUM_POPULATION_SIZE);
+    }
+
+    #[test]
+    fn population_too_small() {
+        let simulation = prepare_simulation(MINIMUM_POPULATION_SIZE - 1);
+        assert!(simulation.is_none());
     }
 
     #[test]
