@@ -45,6 +45,31 @@ mod tests {
     use crate::neuron::Neuron;
     use crate::randomizer::RandomProvider;
 
+    fn create_test_pops<'a>(
+        neurons: usize,
+        inputs: usize,
+        randomizer: &'a mut dyn RandomProvider,
+    ) -> (NetworkLayout, NetworkLayout) {
+        (
+            NetworkLayout {
+                neurons: std::iter::repeat_with(|| {
+                    Neuron::new(false, inputs, &mut Some(randomizer))
+                })
+                .take(neurons)
+                .collect(),
+                layers: vec![],
+            },
+            NetworkLayout {
+                neurons: std::iter::repeat_with(|| {
+                    Neuron::new(false, inputs, &mut Some(randomizer))
+                })
+                .take(neurons)
+                .collect(),
+                layers: vec![],
+            },
+        )
+    }
+
     #[test]
     fn test_crossover() {
         pub(crate) struct TestRandomizer {
@@ -59,24 +84,8 @@ mod tests {
         let mut randomizer = TestRandomizer { current: 0.0 };
 
         const NEURON_COUNT: usize = 5;
-        let (pop1, pop2) = (
-            NetworkLayout {
-                neurons: std::iter::repeat_with(|| {
-                    Neuron::new(false, 1, &mut Some(&mut randomizer))
-                })
-                .take(NEURON_COUNT)
-                .collect(),
-                layers: vec![],
-            },
-            NetworkLayout {
-                neurons: std::iter::repeat_with(|| {
-                    Neuron::new(false, 1, &mut Some(&mut randomizer))
-                })
-                .take(NEURON_COUNT)
-                .collect(),
-                layers: vec![],
-            },
-        );
+        const INPUT_COUNT: usize = 1;
+        let (pop1, pop2) = create_test_pops(NEURON_COUNT, INPUT_COUNT, &mut randomizer);
 
         // Before crossover:
         //      1.0 - 2.0 - 3.0 - 4.0 -  5.0
@@ -127,25 +136,7 @@ mod tests {
         const INPUT_COUNT: usize = 150;
         const TOTAL_INPUTS: usize = NEURON_COUNT * INPUT_COUNT * 2;
         const MUTATION_PROBABILITY: f64 = 0.5;
-        let (pop1, pop2) = (
-            // TODO: Extract make_pops()
-            NetworkLayout {
-                neurons: std::iter::repeat_with(|| {
-                    Neuron::new(false, INPUT_COUNT, &mut Some(&mut randomizer))
-                })
-                .take(NEURON_COUNT)
-                .collect(),
-                layers: vec![],
-            },
-            NetworkLayout {
-                neurons: std::iter::repeat_with(|| {
-                    Neuron::new(false, INPUT_COUNT, &mut Some(&mut randomizer))
-                })
-                .take(NEURON_COUNT)
-                .collect(),
-                layers: vec![],
-            },
-        );
+        let (pop1, pop2) = create_test_pops(NEURON_COUNT, INPUT_COUNT, &mut randomizer);
 
         let mutated = mutate([pop1, pop2], &mut mutation_randomizer, MUTATION_PROBABILITY);
         let mut counter = 0;
