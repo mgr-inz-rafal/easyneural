@@ -2,10 +2,8 @@ use crate::network::NetworkLayout;
 use crate::randomizer::RandomProvider;
 use rand::Rng;
 
-const MUTATION_PROBABILITY: f64 = 0.1;
-
-fn should_mutate(rng: &mut rand::rngs::ThreadRng) -> bool {
-    if rng.gen::<f64>() < MUTATION_PROBABILITY {
+fn should_mutate(rng: &mut rand::rngs::ThreadRng, probability: f64) -> bool {
+    if rng.gen::<f64>() < probability {
         true
     } else {
         false
@@ -24,12 +22,13 @@ pub(crate) fn crossover(parents: [NetworkLayout; 2]) -> [NetworkLayout; 2] {
 pub(crate) fn mutate<'a>(
     mut parents: [NetworkLayout; 2],
     randomizer: &'a mut dyn RandomProvider,
+    mutation_probability: f64,
 ) -> [NetworkLayout; 2] {
     let mut uniform_randomizer = rand::thread_rng();
     parents.iter_mut().for_each(|parent| {
         parent.neurons.iter_mut().for_each(|neuron| {
             neuron.inputs.iter_mut().for_each(|input| {
-                if should_mutate(&mut uniform_randomizer) {
+                if should_mutate(&mut uniform_randomizer, mutation_probability) {
                     *input = randomizer.get_number();
                 }
             })

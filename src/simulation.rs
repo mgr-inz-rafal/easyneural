@@ -1,8 +1,10 @@
 use crate::genetic::{crossover, mutate};
 use crate::network::{NetworkBuilder, NetworkLayout};
-use crate::randomizer::{DefaultRandomizer, RandomProvider};
+use crate::randomizer::RandomProvider;
 use crate::simulating_world::SimulatingWorld;
 use crate::specimen::{Specimen, SpecimenStatus};
+
+const DEFAULT_MUTATION_PROBABILITY: f64 = 0.1;
 
 pub struct SimulationStatus {
     pub specimen_status: SpecimenStatus,
@@ -14,6 +16,7 @@ pub struct Simulation<'a, T: SimulatingWorld> {
     pub world: Option<T>,
     parents: [Option<usize>; 2],
     randomizer: Option<&'a mut dyn RandomProvider>,
+    mutation_probability: f64,
 }
 
 impl<'a, T: SimulatingWorld> Simulation<'a, T> {
@@ -21,6 +24,7 @@ impl<'a, T: SimulatingWorld> Simulation<'a, T> {
         population_size: usize,
         neurons_per_layer: &[usize],
         randomizer: &'a mut dyn RandomProvider,
+        mutation_probability: Option<f64>,
     ) -> Result<Simulation<'a, T>, String> {
         use crate::MINIMUM_POPULATION_SIZE;
 
@@ -35,7 +39,7 @@ impl<'a, T: SimulatingWorld> Simulation<'a, T> {
             population: std::iter::repeat_with(|| {
                 NetworkBuilder::new()
                     .with_neurons_per_layer(&neurons_per_layer)
-                    .with_randomizer(&mut DefaultRandomizer::new()) // TODO: Borro self.randomizer here
+                    .with_randomizer(randomizer)
                     .build()
             })
             .take(population_size)
@@ -46,11 +50,16 @@ impl<'a, T: SimulatingWorld> Simulation<'a, T> {
             .collect(),
             parents: [None, None],
             randomizer: Some(randomizer),
+            mutation_probability: mutation_probability.unwrap_or(DEFAULT_MUTATION_PROBABILITY),
         })
     }
 
     pub fn evolve(&mut self, parents: [NetworkLayout; 2]) -> [NetworkLayout; 2] {
-        mutate(crossover(parents), self.randomizer.as_deref_mut().unwrap())
+        mutate(
+            crossover(parents),
+            self.randomizer.as_deref_mut().unwrap(),
+            self.mutation_probability,
+        )
     }
 
     fn is_selected_as_parent(&self, index: usize) -> bool {
@@ -157,7 +166,7 @@ mod tests {
         population_size: usize,
         randomizer: &'a mut dyn RandomProvider,
     ) -> Option<Simulation<'a, TestWorld>> {
-        let simulation = Simulation::<TestWorld>::new(population_size, &[1], randomizer);
+        let simulation = Simulation::<TestWorld>::new(population_size, &[1], randomizer, None);
         if let Ok(mut simulation) = simulation {
             simulation
                 .population
