@@ -40,7 +40,7 @@ pub(crate) fn mutate<'a>(
 
 #[cfg(test)]
 mod tests {
-    use crate::genetic::crossover;
+    use crate::genetic::{crossover, mutate};
     use crate::network::NetworkLayout;
     use crate::neuron::Neuron;
     use crate::randomizer::RandomProvider;
@@ -59,18 +59,24 @@ mod tests {
         let mut randomizer = TestRandomizer { current: 0.0 };
 
         const NEURON_COUNT: usize = 5;
-        let pop1 = NetworkLayout {
-            neurons: std::iter::repeat_with(|| Neuron::new(false, 1, &mut Some(&mut randomizer)))
+        let (pop1, pop2) = (
+            NetworkLayout {
+                neurons: std::iter::repeat_with(|| {
+                    Neuron::new(false, 1, &mut Some(&mut randomizer))
+                })
                 .take(NEURON_COUNT)
                 .collect(),
-            layers: vec![],
-        };
-        let pop2 = NetworkLayout {
-            neurons: std::iter::repeat_with(|| Neuron::new(false, 1, &mut Some(&mut randomizer)))
+                layers: vec![],
+            },
+            NetworkLayout {
+                neurons: std::iter::repeat_with(|| {
+                    Neuron::new(false, 1, &mut Some(&mut randomizer))
+                })
                 .take(NEURON_COUNT)
                 .collect(),
-            layers: vec![],
-        };
+                layers: vec![],
+            },
+        );
 
         // Before crossover:
         //      1.0 - 2.0 - 3.0 - 4.0 -  5.0
@@ -90,5 +96,75 @@ mod tests {
             .iter()
             .zip([1.0, 2.0, 8.0, 9.0, 10.0].iter())
             .for_each(|(a, b)| assert!(relative_eq!(a.inputs[0], b)));
+    }
+
+    #[test]
+    fn test_mutate() {
+        pub(crate) struct TestRandomizer {
+            current: f64,
+        }
+        impl RandomProvider for TestRandomizer {
+            fn get_number(&mut self) -> f64 {
+                self.current
+            }
+        }
+        let mut randomizer = TestRandomizer { current: 100.0 };
+
+        pub(crate) struct MutationRandomizer {
+            current: f64,
+        }
+        impl RandomProvider for MutationRandomizer {
+            fn get_number(&mut self) -> f64 {
+                self.current
+            }
+        }
+        const MUTATED_VALUE: f64 = -100.0;
+        let mut mutation_randomizer = TestRandomizer {
+            current: MUTATED_VALUE,
+        };
+
+        const NEURON_COUNT: usize = 50;
+        const INPUT_COUNT: usize = 150;
+        const TOTAL_INPUTS: usize = NEURON_COUNT * INPUT_COUNT * 2;
+        const MUTATION_PROBABILITY: f64 = 0.5;
+        let (pop1, pop2) = (
+            // TODO: Extract make_pops()
+            NetworkLayout {
+                neurons: std::iter::repeat_with(|| {
+                    Neuron::new(false, INPUT_COUNT, &mut Some(&mut randomizer))
+                })
+                .take(NEURON_COUNT)
+                .collect(),
+                layers: vec![],
+            },
+            NetworkLayout {
+                neurons: std::iter::repeat_with(|| {
+                    Neuron::new(false, INPUT_COUNT, &mut Some(&mut randomizer))
+                })
+                .take(NEURON_COUNT)
+                .collect(),
+                layers: vec![],
+            },
+        );
+
+        let mutated = mutate([pop1, pop2], &mut mutation_randomizer, MUTATION_PROBABILITY);
+        let mut counter = 0;
+        mutated.iter().for_each(|pop| {
+            pop.neurons.iter().for_each(|neuron| {
+                counter += neuron
+                    .inputs
+                    .iter()
+                    .filter(|input| relative_eq!(**input, MUTATED_VALUE))
+                    .count()
+            });
+        });
+
+        let percentage_mutated: f64 = counter as f64 / TOTAL_INPUTS as f64;
+        const TOLERANCE: f64 = 0.10; // Allow tolerance, since we use real randomizer while mutating
+        assert!(relative_eq!(
+            percentage_mutated,
+            MUTATION_PROBABILITY,
+            epsilon = TOLERANCE
+        ))
     }
 }
