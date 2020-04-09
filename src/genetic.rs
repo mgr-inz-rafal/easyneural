@@ -21,15 +21,15 @@ pub(crate) fn crossover(parents: [NetworkLayout; 2]) -> [NetworkLayout; 2] {
     [offspring_1, offspring_2]
 }
 
-pub(crate) fn mutate(
+pub(crate) fn mutate<'a>(
     mut parents: [NetworkLayout; 2],
-    randomizer: &mut Box<dyn RandomProvider>,
+    randomizer: &'a mut dyn RandomProvider,
 ) -> [NetworkLayout; 2] {
-    let mut rng = rand::thread_rng();
+    let mut uniform_randomizer = rand::thread_rng();
     parents.iter_mut().for_each(|parent| {
         parent.neurons.iter_mut().for_each(|neuron| {
             neuron.inputs.iter_mut().for_each(|input| {
-                if should_mutate(&mut rng) {
+                if should_mutate(&mut uniform_randomizer) {
                     *input = randomizer.get_number();
                 }
             })
