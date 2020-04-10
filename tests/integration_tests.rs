@@ -57,7 +57,7 @@ fn test_run_training_session() -> Result<(), String> {
     let mut randomizer = DefaultRandomizer::new();
     let mut session =
         Simulation::<MyWorld>::new(POPULATION_SIZE, &neurons_per_layer, &mut randomizer, None)?;
-    let best_pops = session.run_simulation()?;
-    let _new_population = session.evolve(best_pops);
+    let best_pops = session.simulate()?;
+    session.spawn_new_population_using(best_pops);
     Ok(())
 }

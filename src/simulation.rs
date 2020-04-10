@@ -34,6 +34,11 @@ impl<'a, T: SimulatingWorld> Simulation<'a, T> {
                 MINIMUM_POPULATION_SIZE
             ));
         }
+
+        if population_size % 2 != 0 {
+            return Err("Population size must be an even number".to_string());
+        };
+
         Ok(Simulation {
             world: None,
             population: std::iter::repeat_with(|| {
@@ -54,9 +59,18 @@ impl<'a, T: SimulatingWorld> Simulation<'a, T> {
         })
     }
 
-    pub fn evolve(&mut self, parents: [NetworkLayout; 2]) -> [NetworkLayout; 2] {
+    pub fn spawn_new_population_using(&mut self, parents: [NetworkLayout; 2]) {
+        dbg!(self.population.len());
+        for i in 0..self.population.len() / 2 {
+            let evolved = self.evolve(&parents);
+            self.population[i * 2].brain.layout = evolved[0].clone();
+            self.population[i * 2 + 1].brain.layout = evolved[1].clone();
+        }
+    }
+
+    pub fn evolve(&mut self, parents: &[NetworkLayout; 2]) -> [NetworkLayout; 2] {
         mutate(
-            crossover(parents),
+            crossover(&parents),
             self.randomizer.as_deref_mut().unwrap(),
             self.mutation_probability,
         )
@@ -93,7 +107,7 @@ impl<'a, T: SimulatingWorld> Simulation<'a, T> {
         }
     }
 
-    pub fn run_simulation(&mut self) -> Result<[NetworkLayout; 2], &str> {
+    pub fn simulate(&mut self) -> Result<[NetworkLayout; 2], &str> {
         let mut status;
         for specimen_index in 0..self.population.len() {
             let specimen = &mut self.population[specimen_index];
@@ -195,7 +209,7 @@ mod tests {
 
     #[test]
     fn selecting_parents_just_one() {
-        const TEST_POPULATION_SIZE: usize = 5;
+        const TEST_POPULATION_SIZE: usize = 6;
         let mut randomizer = DefaultRandomizer::new();
         let mut simulation = prepare_simulation(TEST_POPULATION_SIZE, &mut randomizer)
             .expect("Unable to create simulation");
@@ -209,7 +223,7 @@ mod tests {
 
     #[test]
     fn selecting_parents_just_two() {
-        const TEST_POPULATION_SIZE: usize = 5;
+        const TEST_POPULATION_SIZE: usize = 6;
         let mut randomizer = DefaultRandomizer::new();
         let mut simulation = prepare_simulation(TEST_POPULATION_SIZE, &mut randomizer)
             .expect("Unable to create simulation");

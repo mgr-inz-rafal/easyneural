@@ -10,7 +10,7 @@ fn should_mutate(rng: &mut rand::rngs::ThreadRng, probability: f64) -> bool {
     }
 }
 
-pub(crate) fn crossover(parents: [NetworkLayout; 2]) -> [NetworkLayout; 2] {
+pub(crate) fn crossover(parents: &[NetworkLayout; 2]) -> [NetworkLayout; 2] {
     let crossover_point = parents[0].neurons.len() / 2;
     let (mut offspring_1, mut offspring_2) = (parents[0].clone(), parents[1].clone());
     for i in 0..crossover_point {
@@ -94,7 +94,7 @@ mod tests {
         // After crossover:
         //      6.0 - 7.0 - 3.0 - 4.0 -  5.0
         //      1.0 - 2.0 - 8.0 - 9.0 - 10.0
-        let [offspring_1, offspring_2] = crossover([pop1, pop2]);
+        let [offspring_1, offspring_2] = crossover(&[pop1, pop2]);
         offspring_1
             .neurons
             .iter()
