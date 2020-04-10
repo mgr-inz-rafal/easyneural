@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use crate::genetic::{crossover, mutate};
 use crate::network::{NetworkBuilder, NetworkLayout};
 use crate::randomizer::RandomProvider;
@@ -5,6 +7,11 @@ use crate::simulating_world::SimulatingWorld;
 use crate::specimen::{Specimen, SpecimenStatus};
 
 const DEFAULT_MUTATION_PROBABILITY: f64 = 0.1;
+
+pub enum Finish {
+    Occurences(usize),
+    Timeout(Duration),
+}
 
 pub struct SimulationStatus {
     pub specimen_status: SpecimenStatus,
@@ -17,6 +24,9 @@ pub struct Simulation<'a, T: SimulatingWorld> {
     parents: [Option<usize>; 2],
     randomizer: Option<&'a mut dyn RandomProvider>,
     mutation_probability: f64,
+
+    // TODO: Temporary - will be reworked with SimulationStatus
+    counter: usize,
 }
 
 impl<'a, T: SimulatingWorld> Simulation<'a, T> {
@@ -34,6 +44,11 @@ impl<'a, T: SimulatingWorld> Simulation<'a, T> {
                 MINIMUM_POPULATION_SIZE
             ));
         }
+
+        if population_size % 2 != 0 {
+            return Err("Population size must be an even number".to_string());
+        };
+
         Ok(Simulation {
             world: None,
             population: std::iter::repeat_with(|| {
@@ -51,15 +66,48 @@ impl<'a, T: SimulatingWorld> Simulation<'a, T> {
             parents: [None, None],
             randomizer: Some(randomizer),
             mutation_probability: mutation_probability.unwrap_or(DEFAULT_MUTATION_PROBABILITY),
+            counter: 0,
         })
     }
 
-    pub fn evolve(&mut self, parents: [NetworkLayout; 2]) -> [NetworkLayout; 2] {
+    pub fn spawn_new_population_using(&mut self, parents: [NetworkLayout; 2]) {
+        dbg!(self.population.len());
+        for i in 0..self.population.len() / 2 {
+            let evolved = self.evolve(&parents);
+            self.population[i * 2].brain.layout = evolved[0].clone();
+            self.population[i * 2 + 1].brain.layout = evolved[1].clone();
+        }
+    }
+
+    pub fn evolve(&mut self, parents: &[NetworkLayout; 2]) -> [NetworkLayout; 2] {
         mutate(
-            crossover(parents),
+            crossover(&parents),
             self.randomizer.as_deref_mut().unwrap(),
             self.mutation_probability,
         )
+    }
+
+    fn simulation_loop(&mut self) -> Result<(), String> {
+        self.counter += 1;
+        let best_pops = self.simulate()?;
+        self.spawn_new_population_using(best_pops);
+        Ok(())
+    }
+
+    pub fn run(&mut self, finish: Finish) -> Result<(), String> {
+        match finish {
+            Finish::Occurences(count) => {
+                for _ in 0..count {
+                    self.simulation_loop()?;
+                }
+                return Ok(());
+            }
+            _ => return Err("Simulation end trigger not supported yet".to_string()),
+        };
+    }
+
+    pub fn get_number_of_iterations(&self) -> usize {
+        self.counter
     }
 
     fn is_selected_as_parent(&self, index: usize) -> bool {
@@ -93,7 +141,7 @@ impl<'a, T: SimulatingWorld> Simulation<'a, T> {
         }
     }
 
-    pub fn run_simulation(&mut self) -> Result<[NetworkLayout; 2], &str> {
+    pub fn simulate(&mut self) -> Result<[NetworkLayout; 2], String> {
         let mut status;
         for specimen_index in 0..self.population.len() {
             let specimen = &mut self.population[specimen_index];
@@ -124,7 +172,8 @@ impl<'a, T: SimulatingWorld> Simulation<'a, T> {
             .is_some()
         {
             return Err(
-                "Simulation finished w/o nominating best parents. This is a bug, please report",
+                "Simulation finished w/o nominating best parents. This is a bug, please report"
+                    .to_string(),
             );
         }
         Ok([
@@ -195,7 +244,7 @@ mod tests {
 
     #[test]
     fn selecting_parents_just_one() {
-        const TEST_POPULATION_SIZE: usize = 5;
+        const TEST_POPULATION_SIZE: usize = 6;
         let mut randomizer = DefaultRandomizer::new();
         let mut simulation = prepare_simulation(TEST_POPULATION_SIZE, &mut randomizer)
             .expect("Unable to create simulation");
@@ -209,7 +258,7 @@ mod tests {
 
     #[test]
     fn selecting_parents_just_two() {
-        const TEST_POPULATION_SIZE: usize = 5;
+        const TEST_POPULATION_SIZE: usize = 6;
         let mut randomizer = DefaultRandomizer::new();
         let mut simulation = prepare_simulation(TEST_POPULATION_SIZE, &mut randomizer)
             .expect("Unable to create simulation");

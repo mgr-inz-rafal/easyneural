@@ -2,8 +2,10 @@ extern crate easyneural;
 
 use easyneural::randomizer::DefaultRandomizer;
 use easyneural::simulating_world::SimulatingWorld;
-use easyneural::simulation::{Simulation, SimulationStatus};
+use easyneural::simulation::{Finish, Simulation, SimulationStatus};
 use easyneural::specimen::SpecimenStatus;
+
+use if_chain::if_chain;
 
 struct MyWorld {
     tick: usize,
@@ -50,14 +52,22 @@ impl SimulatingWorld for MyWorld {
 }
 
 #[test]
-fn test_run_training_session() -> Result<(), String> {
+fn test_run_training_session() {
     const POPULATION_SIZE: usize = 10;
+    const SIMULATION_ROUNDS: usize = 10;
 
     let neurons_per_layer = [2, 4, 5, 1];
     let mut randomizer = DefaultRandomizer::new();
-    let mut session =
-        Simulation::<MyWorld>::new(POPULATION_SIZE, &neurons_per_layer, &mut randomizer, None)?;
-    let best_pops = session.run_simulation()?;
-    let _new_population = session.evolve(best_pops);
-    Ok(())
+
+    if_chain! {
+        if let Ok(mut session) = Simulation::<MyWorld>::new(POPULATION_SIZE, &neurons_per_layer, &mut randomizer, None);
+        if let Ok(_) = session.run(Finish::Occurences(SIMULATION_ROUNDS));
+        then {
+            assert_eq!(session.get_number_of_iterations(), SIMULATION_ROUNDS);
+        }
+        else
+        {
+            assert!(false, "Error running session");
+        }
+    }
 }

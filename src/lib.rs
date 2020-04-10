@@ -11,4 +11,4 @@ pub mod simulation;
 pub mod specimen;
 
 const BIAS_VALUE: f64 = 1.0;
-const MINIMUM_POPULATION_SIZE: usize = 3;
+const MINIMUM_POPULATION_SIZE: usize = 4;
