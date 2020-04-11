@@ -70,7 +70,7 @@ impl<'a, T: SimulatingWorld> Simulation<'a, T> {
         })
     }
 
-    pub fn spawn_new_population_using(&mut self, parents: [NetworkLayout; 2]) {
+    pub fn spawn_new_population_using(&mut self, parents: &[NetworkLayout; 2]) {
         dbg!(self.population.len());
         for i in 0..self.population.len() / 2 {
             let evolved = self.evolve(&parents);
@@ -87,20 +87,33 @@ impl<'a, T: SimulatingWorld> Simulation<'a, T> {
         )
     }
 
-    fn simulation_loop(&mut self) -> Result<(), String> {
+    fn simulation_loop(&mut self) -> Result<[NetworkLayout; 2], String> {
         self.counter += 1;
         let best_pops = self.simulate()?;
-        self.spawn_new_population_using(best_pops);
-        Ok(())
+
+        // TODO: spawn_new_population_using() is not tested
+        // TODO: Do not call spawn_new_population_using() if it is the last iteration of the simulation_loop
+        self.spawn_new_population_using(&best_pops);
+        Ok(best_pops)
     }
 
-    pub fn run(&mut self, finish: Finish) -> Result<(), String> {
+    pub fn run(&mut self, finish: Finish) -> Result<[NetworkLayout; 2], String> {
         match finish {
             Finish::Occurences(count) => {
+                let mut best_parents_so_far = None;
                 for _ in 0..count {
-                    self.simulation_loop()?;
+                    match self.simulation_loop() {
+                        Err(message) => return Err(message),
+                        Ok(best_parents) => best_parents_so_far = Some(best_parents),
+                    }
                 }
-                return Ok(());
+                if let Some(best_parents) = best_parents_so_far {
+                    return Ok(best_parents);
+                } else {
+                    return Err(
+                        "Simulation finished, but no best parents could be selected".to_string()
+                    );
+                }
             }
             _ => return Err("Simulation end trigger not supported yet".to_string()),
         };

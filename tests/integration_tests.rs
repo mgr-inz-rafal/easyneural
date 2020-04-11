@@ -61,7 +61,7 @@ fn test_run_training_session() {
 
     if_chain! {
         if let Ok(mut session) = Simulation::<MyWorld>::new(POPULATION_SIZE, &neurons_per_layer, &mut randomizer, None);
-        if let Ok(_) = session.run(Finish::Occurences(SIMULATION_ROUNDS));
+        if let Ok(best_brains) = session.run(Finish::Occurences(SIMULATION_ROUNDS));
         then {
             assert_eq!(session.get_number_of_iterations(), SIMULATION_ROUNDS);
         }
