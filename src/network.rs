@@ -90,7 +90,7 @@ impl Network {
         assert_eq!(
             input_values.len(),
             self.layout.layers[0].len() - 1,
-            "Incorrect number of inputs"
+            "Incorrect number of inputs. Make sure that the `SimulatingWorld` you provided reports the same number of inputs (via `get_world_state()`) as there are neurons on the first layer."
         );
 
         Network::set_layer_values(
