@@ -2,7 +2,7 @@ use crate::neuron::Neuron;
 use crate::randomizer::RandomProvider;
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct NetworkLayout {
     pub neurons: Vec<Neuron>,
     pub(crate) layers: Vec<Vec<usize>>,
