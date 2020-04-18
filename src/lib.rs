@@ -12,3 +12,9 @@ pub mod specimen;
 
 const BIAS_VALUE: f64 = 1.0;
 const MINIMUM_POPULATION_SIZE: usize = 4;
+
+#[derive(Clone, Debug)]
+pub struct Specimen {
+    pub brain: network::NetworkLayout,
+    pub fitness: f64,
+}
