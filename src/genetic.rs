@@ -1,4 +1,3 @@
-use crate::network::NetworkLayout;
 use crate::randomizer::RandomProvider;
 use rand::Rng;
 
@@ -10,23 +9,26 @@ fn should_mutate(rng: &mut rand::rngs::ThreadRng, probability: f64) -> bool {
     }
 }
 
-pub(crate) fn crossover(parents: &[NetworkLayout; 2]) -> [NetworkLayout; 2] {
-    let crossover_point = parents[0].neurons.len() / 2;
+pub(crate) fn crossover(parents: &[crate::Specimen; 2]) -> [crate::Specimen; 2] {
+    let crossover_point = parents[0].brain.neurons.len() / 2;
     let (mut offspring_1, mut offspring_2) = (parents[0].clone(), parents[1].clone());
     for i in 0..crossover_point {
-        std::mem::swap(&mut offspring_1.neurons[i], &mut offspring_2.neurons[i]);
+        std::mem::swap(
+            &mut offspring_1.brain.neurons[i],
+            &mut offspring_2.brain.neurons[i],
+        );
     }
     [offspring_1, offspring_2]
 }
 
 pub(crate) fn mutate<'a>(
-    mut parents: [NetworkLayout; 2],
+    mut parents: [crate::Specimen; 2],
     randomizer: &'a mut dyn RandomProvider,
     mutation_probability: f64,
-) -> [NetworkLayout; 2] {
+) -> [crate::Specimen; 2] {
     let mut uniform_randomizer = rand::thread_rng();
     parents.iter_mut().for_each(|parent| {
-        parent.neurons.iter_mut().for_each(|neuron| {
+        parent.brain.neurons.iter_mut().for_each(|neuron| {
             neuron.inputs.iter_mut().for_each(|input| {
                 if should_mutate(&mut uniform_randomizer, mutation_probability) {
                     *input = randomizer.get_number();
@@ -49,23 +51,29 @@ mod tests {
         neurons: usize,
         inputs: usize,
         randomizer: &'a mut dyn RandomProvider,
-    ) -> (NetworkLayout, NetworkLayout) {
+    ) -> (crate::Specimen, crate::Specimen) {
         (
-            NetworkLayout {
-                neurons: std::iter::repeat_with(|| {
-                    Neuron::new(false, inputs, &mut Some(randomizer))
-                })
-                .take(neurons)
-                .collect(),
-                layers: vec![],
+            crate::Specimen {
+                fitness: 0.0,
+                brain: NetworkLayout {
+                    neurons: std::iter::repeat_with(|| {
+                        Neuron::new(false, inputs, &mut Some(randomizer))
+                    })
+                    .take(neurons)
+                    .collect(),
+                    layers: vec![],
+                },
             },
-            NetworkLayout {
-                neurons: std::iter::repeat_with(|| {
-                    Neuron::new(false, inputs, &mut Some(randomizer))
-                })
-                .take(neurons)
-                .collect(),
-                layers: vec![],
+            crate::Specimen {
+                fitness: 0.0,
+                brain: NetworkLayout {
+                    neurons: std::iter::repeat_with(|| {
+                        Neuron::new(false, inputs, &mut Some(randomizer))
+                    })
+                    .take(neurons)
+                    .collect(),
+                    layers: vec![],
+                },
             },
         )
     }
@@ -96,11 +104,13 @@ mod tests {
         //      1.0 - 2.0 - 8.0 - 9.0 - 10.0
         let [offspring_1, offspring_2] = crossover(&[pop1, pop2]);
         offspring_1
+            .brain
             .neurons
             .iter()
             .zip([6.0, 7.0, 3.0, 4.0, 5.0].iter())
             .for_each(|(a, b)| assert!(relative_eq!(a.inputs[0], b)));
         offspring_2
+            .brain
             .neurons
             .iter()
             .zip([1.0, 2.0, 8.0, 9.0, 10.0].iter())
@@ -141,7 +151,7 @@ mod tests {
         let mutated = mutate([pop1, pop2], &mut mutation_randomizer, MUTATION_PROBABILITY);
         let mut counter = 0;
         mutated.iter().for_each(|pop| {
-            pop.neurons.iter().for_each(|neuron| {
+            pop.brain.neurons.iter().for_each(|neuron| {
                 counter += neuron
                     .inputs
                     .iter()

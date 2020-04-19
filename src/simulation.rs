@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use crate::genetic::{crossover, mutate};
-use crate::network::{NetworkBuilder, NetworkLayout};
+use crate::network::NetworkBuilder;
 use crate::randomizer::RandomProvider;
 use crate::simulating_world::SimulatingWorld;
 use crate::specimen::{Specimen, SpecimenStatus};
@@ -70,16 +70,17 @@ impl<'a, T: SimulatingWorld> Simulation<'a, T> {
         })
     }
 
-    pub fn spawn_new_population_using(&mut self, parents: &[NetworkLayout; 2]) {
-        dbg!(self.population.len());
+    pub fn spawn_new_population_using(&mut self, parents: &[crate::Specimen; 2]) {
         for i in 0..self.population.len() / 2 {
             let evolved = self.evolve(&parents);
-            self.population[i * 2].brain.layout = evolved[0].clone();
-            self.population[i * 2 + 1].brain.layout = evolved[1].clone();
+            self.population[i * 2].brain.layout = evolved[0].brain.clone();
+            self.population[i * 2].fitness = 0.0;
+            self.population[i * 2 + 1].brain.layout = evolved[1].brain.clone();
+            self.population[i * 2 + 1].fitness = 0.0;
         }
     }
 
-    pub fn evolve(&mut self, parents: &[NetworkLayout; 2]) -> [NetworkLayout; 2] {
+    pub fn evolve(&mut self, parents: &[crate::Specimen; 2]) -> [crate::Specimen; 2] {
         mutate(
             crossover(&parents),
             self.randomizer.as_deref_mut().unwrap(),
@@ -87,7 +88,7 @@ impl<'a, T: SimulatingWorld> Simulation<'a, T> {
         )
     }
 
-    fn simulation_loop(&mut self) -> Result<[NetworkLayout; 2], String> {
+    fn simulation_loop(&mut self) -> Result<[crate::Specimen; 2], String> {
         self.counter += 1;
         let best_pops = self.simulate()?;
 
@@ -97,7 +98,7 @@ impl<'a, T: SimulatingWorld> Simulation<'a, T> {
         Ok(best_pops)
     }
 
-    pub fn run(&mut self, finish: Finish) -> Result<[NetworkLayout; 2], String> {
+    pub fn run(&mut self, finish: Finish) -> Result<[crate::Specimen; 2], String> {
         match finish {
             Finish::Occurences(count) => {
                 let mut best_parents_so_far = None;
@@ -154,7 +155,7 @@ impl<'a, T: SimulatingWorld> Simulation<'a, T> {
         }
     }
 
-    pub fn simulate(&mut self) -> Result<[NetworkLayout; 2], String> {
+    pub fn simulate(&mut self) -> Result<[crate::Specimen; 2], String> {
         let mut status;
         for specimen_index in 0..self.population.len() {
             let specimen = &mut self.population[specimen_index];
@@ -189,15 +190,22 @@ impl<'a, T: SimulatingWorld> Simulation<'a, T> {
                     .to_string(),
             );
         }
+
         Ok([
-            self.population[self.parents[0].unwrap()]
-                .brain
-                .layout
-                .clone(),
-            self.population[self.parents[1].unwrap()]
-                .brain
-                .layout
-                .clone(),
+            crate::Specimen {
+                brain: self.population[self.parents[0].unwrap()]
+                    .brain
+                    .layout
+                    .clone(),
+                fitness: self.population[self.parents[0].unwrap()].fitness,
+            },
+            crate::Specimen {
+                brain: self.population[self.parents[0].unwrap()]
+                    .brain
+                    .layout
+                    .clone(),
+                fitness: self.population[self.parents[0].unwrap()].fitness,
+            },
         ])
     }
 }
