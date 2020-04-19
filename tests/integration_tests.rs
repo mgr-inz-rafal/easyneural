@@ -32,7 +32,7 @@ impl SimulatingWorld for MyWorld {
         self.liveliness = self.liveliness + if input[0] < 0.5 { -3 } else { 1 };
         let alive_status;
         match self.liveliness {
-            -5..=5 => alive_status = SpecimenStatus::ALIVE,
+            -5..=5 => alive_status = SpecimenStatus::ALIVE(self.get_specimen_score(input[0])),
             _ => alive_status = SpecimenStatus::DEAD(self.get_specimen_score(input[0])),
         }
 

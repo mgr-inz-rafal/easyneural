@@ -1,7 +1,7 @@
 use crate::network::Network;
 
 pub enum SpecimenStatus {
-    ALIVE,
+    ALIVE(f64),
     DEAD(f64),
 }
 
