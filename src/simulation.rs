@@ -21,7 +21,7 @@ pub struct SimulationStatus {
 pub struct Simulation<'a, T: SimulatingWorld> {
     pub(crate) population: Vec<Specimen>,
     pub world: Option<T>,
-    parents: [Option<usize>; 2],
+    parents: Vec<(usize, f64)>,
     randomizer: Option<&'a mut dyn RandomProvider>,
     mutation_probability: f64,
 
@@ -63,14 +63,22 @@ impl<'a, T: SimulatingWorld> Simulation<'a, T> {
                 fitness: 0.0,
             })
             .collect(),
-            parents: [None, None],
+            parents: vec![],
             randomizer: Some(randomizer),
             mutation_probability: mutation_probability.unwrap_or(DEFAULT_MUTATION_PROBABILITY),
             counter: 0,
         })
     }
 
+    pub(crate) fn is_selected_as_parent(&self, index: usize) -> bool {
+        self.parents
+            .iter()
+            .find(|&&parent| parent.0 == index)
+            .is_some()
+    }
+
     pub(crate) fn evolve_population(&mut self, parents: &[crate::Specimen; 2]) {
+        self.parents.clear();
         for i in 0..self.population.len() / 2 {
             let evolved = self.evolve(&parents);
             self.population[i * 2].brain.layout = evolved[0].brain.clone();
@@ -135,35 +143,9 @@ impl<'a, T: SimulatingWorld> Simulation<'a, T> {
         self.counter
     }
 
-    fn is_selected_as_parent(&self, index: usize) -> bool {
-        self.parents
-            .iter()
-            .find(|&&parent| parent == Some(index))
-            .is_some()
-    }
-
     fn add_parent_candidate(&mut self, candindate_index: usize) {
-        if let Some(empty_parent) = self.parents.iter_mut().find(|parent| parent.is_none()) {
-            // Replace empty parent with candidate
-            *empty_parent = Some(candindate_index);
-        } else {
-            let worse_parent_index = match self
-                .parents
-                .iter()
-                .enumerate()
-                .min_by_key(|parent| parent.1.unwrap())
-            {
-                Some(worse_parent) => worse_parent.0,
-                None => 0,
-            };
-            let candidate = &self.population[candindate_index];
-            let worse_parent = &self.population[self.parents[worse_parent_index].unwrap()];
-            if !self.is_selected_as_parent(candindate_index)
-                && candidate.fitness > worse_parent.fitness
-            {
-                self.parents[worse_parent_index] = Some(candindate_index);
-            }
-        }
+        self.parents
+            .push((candindate_index, self.population[candindate_index].fitness));
     }
 
     pub fn simulate(&mut self) -> Result<[crate::Specimen; 2], String> {
@@ -186,32 +168,17 @@ impl<'a, T: SimulatingWorld> Simulation<'a, T> {
             }
         }
 
-        if self
-            .parents
-            .iter_mut()
-            .find(|parent| parent.is_none())
-            .is_some()
-        {
-            return Err(
-                "Simulation finished w/o nominating best parents. This is a bug, please report"
-                    .to_string(),
-            );
-        }
+        self.parents
+            .sort_by(|b, a| a.1.partial_cmp(&b.1).unwrap_or(std::cmp::Ordering::Equal));
 
         Ok([
             crate::Specimen {
-                brain: self.population[self.parents[0].unwrap()]
-                    .brain
-                    .layout
-                    .clone(),
-                fitness: self.population[self.parents[0].unwrap()].fitness,
+                brain: self.population[self.parents[0].0].brain.layout.clone(),
+                fitness: self.parents[0].1,
             },
             crate::Specimen {
-                brain: self.population[self.parents[1].unwrap()]
-                    .brain
-                    .layout
-                    .clone(),
-                fitness: self.population[self.parents[1].unwrap()].fitness,
+                brain: self.population[self.parents[1].0].brain.layout.clone(),
+                fitness: self.parents[1].1,
             },
         ])
     }
@@ -301,20 +268,6 @@ mod tests {
                 assert!(false);
             }
         }
-    }
-
-    #[test]
-    fn selecting_parents_just_one() {
-        const TEST_POPULATION_SIZE: usize = 6;
-        let mut randomizer = DefaultRandomizer::new();
-        let mut simulation = prepare_simulation(TEST_POPULATION_SIZE, &mut randomizer)
-            .expect("Unable to create simulation");
-        simulation.add_parent_candidate(1);
-        assert!(simulation.is_selected_as_parent(1));
-        assert!(
-            simulation.parents[1].is_none(),
-            "Parent 2 should not be set here"
-        );
     }
 
     #[test]

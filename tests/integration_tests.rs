@@ -54,14 +54,14 @@ impl SimulatingWorld for MyWorld {
 #[test]
 fn test_run_training_session() {
     const POPULATION_SIZE: usize = 10;
-    const SIMULATION_ROUNDS: usize = 10;
+    const SIMULATION_ROUNDS: usize = 1;
 
     let neurons_per_layer = [2, 4, 5, 1];
     let mut randomizer = DefaultRandomizer::new();
 
     if_chain! {
         if let Ok(mut session) = Simulation::<MyWorld>::new(POPULATION_SIZE, &neurons_per_layer, &mut randomizer, None);
-        if let Ok(_) = session.run(Finish::Occurences(SIMULATION_ROUNDS));
+        if let Ok(parents) = session.run(Finish::Occurences(SIMULATION_ROUNDS));
         then {
             assert_eq!(session.get_number_of_iterations(), SIMULATION_ROUNDS);
         }
