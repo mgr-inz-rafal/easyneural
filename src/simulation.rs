@@ -169,8 +169,7 @@ impl<'a, T: SimulatingWorld> Simulation<'a, T> {
         }
 
         self.parents
-            .sort_by(|a, b| a.1.partial_cmp(&b.1).unwrap_or(std::cmp::Ordering::Equal));
-        self.parents.reverse();
+            .sort_by(|b, a| a.1.partial_cmp(&b.1).unwrap_or(std::cmp::Ordering::Equal));
 
         Ok([
             crate::Specimen {
