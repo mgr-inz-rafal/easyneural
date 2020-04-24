@@ -216,6 +216,7 @@ mod tests {
         Finish, SimulatingWorld, Simulation, SimulationStatus, SpecimenStatus,
     };
     use crate::MINIMUM_POPULATION_SIZE;
+    use if_chain::if_chain;
 
     struct TestWorld;
     impl SimulatingWorld for TestWorld {
@@ -278,15 +279,17 @@ mod tests {
     fn evolved_parents_are_different() {
         let mut randomizer = DefaultRandomizer::new();
         let simulation = prepare_simulation(MINIMUM_POPULATION_SIZE, &mut randomizer);
-        if let Some(mut simulation) = simulation {
-            if let Ok(best_specimen) = simulation.run(Finish::Occurences(2)) {
-                println!("{}", get_all_neuron_inputs_sum(&best_specimen[0].brain));
-                println!("{}", get_all_neuron_inputs_sum(&best_specimen[1].brain));
-
+        if_chain! {
+            if let Some(mut simulation) = simulation;
+            if let Ok(best_specimen) = simulation.run(Finish::Occurences(2));
+            then {
                 assert!(relative_ne!(
                     get_all_neuron_inputs_sum(&best_specimen[0].brain),
                     get_all_neuron_inputs_sum(&best_specimen[1].brain)
-                ));
+                ))
+            }
+            else{
+                assert!(false);
             }
         }
     }
