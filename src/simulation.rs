@@ -105,7 +105,9 @@ impl<'a, T: SimulatingWorld> Simulation<'a, T> {
                 for _ in 0..count {
                     match self.simulation_loop() {
                         Err(message) => return Err(message),
-                        Ok(best_parents) => best_parents_so_far = Some(best_parents),
+                        Ok(best_parents) => {
+                            best_parents_so_far = Some(best_parents);
+                        }
                     }
                 }
                 if let Some(best_parents) = best_parents_so_far {
@@ -166,10 +168,6 @@ impl<'a, T: SimulatingWorld> Simulation<'a, T> {
                     let output = specimen.tick(&current_state);
                     status = world.tick(&output);
                     if let SpecimenStatus::DEAD(fitness) = status.specimen_status {
-                        println!(
-                            "Specimen died in tick {} with fitness {}",
-                            status.current_tick, fitness
-                        );
                         specimen.fitness = fitness;
                         self.add_parent_candidate(specimen_index);
                         break;
@@ -200,11 +198,11 @@ impl<'a, T: SimulatingWorld> Simulation<'a, T> {
                 fitness: self.population[self.parents[0].unwrap()].fitness,
             },
             crate::Specimen {
-                brain: self.population[self.parents[0].unwrap()]
+                brain: self.population[self.parents[1].unwrap()]
                     .brain
                     .layout
                     .clone(),
-                fitness: self.population[self.parents[0].unwrap()].fitness,
+                fitness: self.population[self.parents[1].unwrap()].fitness,
             },
         ])
     }
@@ -281,7 +279,7 @@ mod tests {
         let mut randomizer = DefaultRandomizer::new();
         let simulation = prepare_simulation(MINIMUM_POPULATION_SIZE, &mut randomizer);
         if let Some(mut simulation) = simulation {
-            if let Ok(best_specimen) = simulation.run(Finish::Occurences(10)) {
+            if let Ok(best_specimen) = simulation.run(Finish::Occurences(2)) {
                 println!("{}", get_all_neuron_inputs_sum(&best_specimen[0].brain));
                 println!("{}", get_all_neuron_inputs_sum(&best_specimen[1].brain));
 
