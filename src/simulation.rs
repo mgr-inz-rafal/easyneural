@@ -70,7 +70,7 @@ impl<'a, T: SimulatingWorld> Simulation<'a, T> {
         })
     }
 
-    pub fn spawn_new_population_using(&mut self, parents: &[crate::Specimen; 2]) {
+    pub(crate) fn evolve_population(&mut self, parents: &[crate::Specimen; 2]) {
         for i in 0..self.population.len() / 2 {
             let evolved = self.evolve(&parents);
             self.population[i * 2].brain.layout = evolved[0].brain.clone();
@@ -80,7 +80,7 @@ impl<'a, T: SimulatingWorld> Simulation<'a, T> {
         }
     }
 
-    pub fn evolve(&mut self, parents: &[crate::Specimen; 2]) -> [crate::Specimen; 2] {
+    pub(crate) fn evolve(&mut self, parents: &[crate::Specimen; 2]) -> [crate::Specimen; 2] {
         mutate(
             crossover(&parents),
             self.randomizer.as_deref_mut().unwrap(),
@@ -94,8 +94,17 @@ impl<'a, T: SimulatingWorld> Simulation<'a, T> {
 
         // TODO: spawn_new_population_using() is not tested
         // TODO: Do not call spawn_new_population_using() if it is the last iteration of the simulation_loop
-        self.spawn_new_population_using(&best_pops);
+        self.evolve_population(&best_pops);
         Ok(best_pops)
+    }
+
+    pub fn run_with_parents(
+        &mut self,
+        finish: Finish,
+        parents: [crate::Specimen; 2],
+    ) -> Result<[crate::Specimen; 2], String> {
+        self.evolve_population(&parents);
+        self.run(finish)
     }
 
     pub fn run(&mut self, finish: Finish) -> Result<[crate::Specimen; 2], String> {

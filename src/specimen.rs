@@ -5,6 +5,7 @@ pub enum SpecimenStatus {
     DEAD(f64),
 }
 
+#[derive(Clone)]
 pub(crate) struct Specimen {
     pub brain: Network,
     pub(crate) fitness: f64, // TODO: Move to SpecimenStatus

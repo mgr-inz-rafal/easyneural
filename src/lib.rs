@@ -2,6 +2,8 @@
 #[macro_use]
 extern crate approx;
 
+use serde::Deserialize;
+
 pub mod genetic;
 pub mod network;
 pub mod neuron;
@@ -13,8 +15,17 @@ pub mod specimen;
 const BIAS_VALUE: f64 = 1.0;
 const MINIMUM_POPULATION_SIZE: usize = 4;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Deserialize)]
 pub struct Specimen {
     pub brain: network::NetworkLayout,
     pub fitness: f64,
+}
+
+impl Specimen {
+    pub fn from_json(j: &str) -> Self {
+        Specimen {
+            fitness: 0.0,
+            brain: serde_json::from_str(j).unwrap(), // TODO: Add error checking
+        }
+    }
 }
