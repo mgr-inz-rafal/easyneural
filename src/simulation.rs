@@ -212,8 +212,11 @@ impl<'a, T: SimulatingWorld> Simulation<'a, T> {
 
 #[cfg(test)]
 mod tests {
+    use crate::network::NetworkLayout;
     use crate::randomizer::{DefaultRandomizer, RandomProvider};
-    use crate::simulation::{SimulatingWorld, Simulation, SimulationStatus, SpecimenStatus};
+    use crate::simulation::{
+        Finish, SimulatingWorld, Simulation, SimulationStatus, SpecimenStatus,
+    };
     use crate::MINIMUM_POPULATION_SIZE;
 
     struct TestWorld;
@@ -228,7 +231,7 @@ mod tests {
             }
         }
         fn get_world_state(&self) -> Vec<f64> {
-            vec![]
+            vec![1.0, -1.0]
         }
     }
 
@@ -236,7 +239,8 @@ mod tests {
         population_size: usize,
         randomizer: &'a mut dyn RandomProvider,
     ) -> Option<Simulation<'a, TestWorld>> {
-        let simulation = Simulation::<TestWorld>::new(population_size, &[1], randomizer, None);
+        let simulation =
+            Simulation::<TestWorld>::new(population_size, &[2, 3, 4, 5, 1], randomizer, None);
         if let Ok(mut simulation) = simulation {
             simulation
                 .population
@@ -246,6 +250,15 @@ mod tests {
             return Some(simulation);
         }
         None
+    }
+
+    fn get_all_neuron_inputs_sum(network: &NetworkLayout) -> f64 {
+        network
+            .neurons
+            .iter()
+            .map(|neuron| &neuron.inputs)
+            .flatten()
+            .sum::<f64>()
     }
 
     #[test]
@@ -261,6 +274,23 @@ mod tests {
         let mut randomizer = DefaultRandomizer::new();
         let simulation = prepare_simulation(MINIMUM_POPULATION_SIZE - 1, &mut randomizer);
         assert!(simulation.is_none());
+    }
+
+    #[test]
+    fn evolved_parents_are_different() {
+        let mut randomizer = DefaultRandomizer::new();
+        let simulation = prepare_simulation(MINIMUM_POPULATION_SIZE, &mut randomizer);
+        if let Some(mut simulation) = simulation {
+            if let Ok(best_specimen) = simulation.run(Finish::Occurences(10)) {
+                println!("{}", get_all_neuron_inputs_sum(&best_specimen[0].brain));
+                println!("{}", get_all_neuron_inputs_sum(&best_specimen[1].brain));
+
+                assert!(relative_ne!(
+                    get_all_neuron_inputs_sum(&best_specimen[0].brain),
+                    get_all_neuron_inputs_sum(&best_specimen[1].brain)
+                ));
+            }
+        }
     }
 
     #[test]

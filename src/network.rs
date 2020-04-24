@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct NetworkLayout {
-    pub neurons: Vec<Neuron>,
+    pub(crate) neurons: Vec<Neuron>,
     pub(crate) layers: Vec<Vec<usize>>,
 }
 

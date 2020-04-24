@@ -1,5 +1,6 @@
+#[macro_use]
+extern crate approx;
 extern crate easyneural;
-
 use easyneural::randomizer::DefaultRandomizer;
 use easyneural::simulating_world::SimulatingWorld;
 use easyneural::simulation::{Finish, Simulation, SimulationStatus};
