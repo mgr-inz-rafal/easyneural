@@ -3,6 +3,10 @@ name = "easyneural"
 version = "0.1.0"
 authors = ["mgr-inz-rafal <rchabowski@gmail.com>"]
 edition = "2018"
+description = "This library will let you train neural networks easily"
+license = "MIT"
+homepage = "https://github.com/mgr-inz-rafal/easyneural"
+repository = "https://github.com/mgr-inz-rafal/easyneural"
 
 [dependencies]
 serde = { version = "1.0", features = ["derive"] }
