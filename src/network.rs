@@ -65,6 +65,7 @@ impl Network {
         is_last: bool,
         activator: fn(f64) -> f64,
     ) {
+        #[allow(clippy::needless_range_loop)]
         for i in 0..layer.len() - if is_last { 0 } else { 1 } {
             let mut value = 0.0;
             let neuron_index = layer[i];
