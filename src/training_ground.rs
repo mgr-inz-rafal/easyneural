@@ -16,7 +16,7 @@ impl Exercise {
 
     /// Tests the neural network of a specimen
     /// against the specified input, yielding the output value.
-    pub fn get_output(&self, inputs: &Vec<f64>) -> f64 {
+    pub fn get_output(&self, inputs: &Vec<f64>) -> Vec<f64> {
         let neurons_per_layer = [1];
         let mut randomizer = DefaultRandomizer::new();
         let mut net = NetworkBuilder::new()
@@ -27,6 +27,6 @@ impl Exercise {
         net.layout = self.specimen.brain.clone();
 
         net.fire(&inputs);
-        net.get_output()[0]
+        net.get_output()
     }
 }
