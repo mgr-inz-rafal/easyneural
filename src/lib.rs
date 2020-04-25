@@ -11,6 +11,7 @@ pub mod randomizer;
 pub mod simulating_world;
 pub mod simulation;
 pub mod specimen;
+/// Training ground for testing the trained network
 pub mod training_ground;
 
 const BIAS_VALUE: f64 = 1.0;
