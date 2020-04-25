@@ -13,7 +13,7 @@ impl Exercise {
     }
 
     pub fn get_output(&self, inputs: &Vec<f64>) -> f64 {
-        let neurons_per_layer = [4, 3, 3, 1];
+        let neurons_per_layer = [1];
         let mut randomizer = DefaultRandomizer::new();
         let mut net = NetworkBuilder::new()
             .with_neurons_per_layer(&neurons_per_layer)
