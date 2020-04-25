@@ -59,16 +59,18 @@ impl Network {
 
     #[allow(dead_code)]
     fn fire_layer(
-        layer: &Vec<usize>,
-        prev_layer: &Vec<usize>,
+        layer: &[usize],
+        prev_layer: &[usize],
         neurons: &mut Vec<Neuron>,
         is_last: bool,
         activator: fn(f64) -> f64,
     ) {
+        #[allow(clippy::needless_range_loop)]
         for i in 0..layer.len() - if is_last { 0 } else { 1 } {
             let mut value = 0.0;
             let neuron_index = layer[i];
-            for j in 0..prev_layer.len() {
+
+            for (j, _) in prev_layer.iter().enumerate() {
                 let input_index = j;
                 let input_value = neurons[neuron_index].inputs[input_index];
                 let prev_layer_neuron_index = prev_layer[j];
@@ -77,6 +79,7 @@ impl Network {
                     .expect("Neuron w/o value found");
                 value += input_value * prev_layer_neuron_value;
             }
+
             neurons[neuron_index].value = Some(activator(value));
         }
     }
@@ -84,7 +87,7 @@ impl Network {
     #[allow(dead_code)]
     pub(crate) fn fire(&mut self, input_values: &[f64]) {
         assert!(
-            self.layout.layers.len() > 0,
+            !self.layout.layers.is_empty(),
             "Trying to fire network with no layers"
         );
         assert_eq!(
@@ -103,11 +106,7 @@ impl Network {
                 &self.layout.layers[layer_index],
                 &self.layout.layers[layer_index - 1],
                 &mut self.layout.neurons,
-                if layer_index == self.layout.layers.len() - 1 {
-                    true
-                } else {
-                    false
-                },
+                layer_index == self.layout.layers.len() - 1,
                 self.activator,
             );
         }
@@ -143,6 +142,7 @@ impl<'a> NetworkBuilder<'a> {
         self
     }
 
+    #[allow(dead_code)]
     pub fn with_activator(&mut self, activator: fn(f64) -> f64) -> &mut Self {
         self.activator = Some(activator);
         self

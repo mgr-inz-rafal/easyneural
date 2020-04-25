@@ -1,4 +1,4 @@
-use crate::network::{Network, NetworkBuilder};
+use crate::network::NetworkBuilder;
 use crate::randomizer::DefaultRandomizer;
 
 /// Holds the specimen that is going to be tested.
@@ -16,7 +16,7 @@ impl Exercise {
 
     /// Tests the neural network of a specimen
     /// against the specified input, yielding the output value.
-    pub fn get_output(&self, inputs: &Vec<f64>) -> Vec<f64> {
+    pub fn get_output(&self, inputs: &[f64]) -> Vec<f64> {
         let neurons_per_layer = [1];
         let mut randomizer = DefaultRandomizer::new();
         let mut net = NetworkBuilder::new()
