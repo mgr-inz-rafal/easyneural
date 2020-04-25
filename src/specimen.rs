@@ -1,7 +1,11 @@
 use crate::network::Network;
 
+/// Status of a specimen.
 pub enum SpecimenStatus {
+    /// Specimen is still alive with the specified fitness.
     ALIVE(f64),
+    /// Specimen is dead with the specified fitness. Dead specimen marks the end of
+    /// the single learning loop.
     DEAD(f64),
 }
 

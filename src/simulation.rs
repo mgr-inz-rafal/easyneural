@@ -8,19 +8,25 @@ use crate::specimen::{Specimen, SpecimenStatus};
 
 const DEFAULT_MUTATION_PROBABILITY: f64 = 0.1;
 
+/// Finish condition for the learning session.
 pub enum Finish {
+    /// Learning will stop after given number of iterations.
     Occurences(usize),
+
+    /// **[NOT IMPLEMENTED YET]** Learning will stop after specified time.
     Timeout(Duration),
 }
 
+/// Represents simulation status.
 pub struct SimulationStatus {
     pub specimen_status: SpecimenStatus,
     pub current_tick: usize,
 }
 
+/// Main struct that handles the learning logic.
 pub struct Simulation<'a, T: SimulatingWorld> {
     pub(crate) population: Vec<Specimen>,
-    pub world: Option<T>,
+    pub(crate) world: Option<T>,
     parents: Vec<(usize, f64)>,
     randomizer: Option<&'a mut dyn RandomProvider>,
     mutation_probability: f64,
@@ -30,6 +36,9 @@ pub struct Simulation<'a, T: SimulatingWorld> {
 }
 
 impl<'a, T: SimulatingWorld> Simulation<'a, T> {
+    /// Creates new simulation struct.
+    ///
+    /// `mutation_probability` is represented as float number from range `[0.0, 1.0)`.
     pub fn new(
         population_size: usize,
         neurons_per_layer: &[usize],
@@ -106,6 +115,12 @@ impl<'a, T: SimulatingWorld> Simulation<'a, T> {
         Ok(best_pops)
     }
 
+    /// Runs the learning round by using the specified specimen
+    /// as parents for new generation.
+    ///
+    /// Use this function if you already have some trained networks (represented
+    /// by `Specimen`) and would like to use them as a base
+    /// for further learning
     pub fn run_with_parents(
         &mut self,
         finish: Finish,
@@ -115,6 +130,10 @@ impl<'a, T: SimulatingWorld> Simulation<'a, T> {
         self.run(finish)
     }
 
+    /// Runs the learning round.
+    ///
+    /// Returns two best specimen from the most recent generation. These specimen
+    /// might be used to resume training by using [`run_with_parents`](#method.run_with_parents).
     pub fn run(&mut self, finish: Finish) -> Result<[crate::Specimen; 2], String> {
         match finish {
             Finish::Occurences(count) => {
@@ -139,6 +158,7 @@ impl<'a, T: SimulatingWorld> Simulation<'a, T> {
         };
     }
 
+    /// Returns number of iterations used in recent learning session.
     pub fn get_number_of_iterations(&self) -> usize {
         self.counter
     }
@@ -148,7 +168,7 @@ impl<'a, T: SimulatingWorld> Simulation<'a, T> {
             .push((candindate_index, self.population[candindate_index].fitness));
     }
 
-    pub fn simulate(&mut self) -> Result<[crate::Specimen; 2], String> {
+    fn simulate(&mut self) -> Result<[crate::Specimen; 2], String> {
         let mut status;
         for specimen_index in 0..self.population.len() {
             let specimen = &mut self.population[specimen_index];
