@@ -11,6 +11,7 @@ pub mod randomizer;
 pub mod simulating_world;
 pub mod simulation;
 pub mod specimen;
+pub mod training_ground;
 
 const BIAS_VALUE: f64 = 1.0;
 const MINIMUM_POPULATION_SIZE: usize = 4;
