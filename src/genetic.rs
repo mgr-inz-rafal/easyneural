@@ -2,11 +2,7 @@ use crate::randomizer::RandomProvider;
 use rand::Rng;
 
 fn should_mutate(rng: &mut rand::rngs::ThreadRng, probability: f64) -> bool {
-    if rng.gen::<f64>() < probability {
-        true
-    } else {
-        false
-    }
+    rng.gen::<f64>() < probability
 }
 
 pub(crate) fn crossover(parents: &[crate::Specimen; 2]) -> [crate::Specimen; 2] {
@@ -21,9 +17,9 @@ pub(crate) fn crossover(parents: &[crate::Specimen; 2]) -> [crate::Specimen; 2] 
     [offspring_1, offspring_2]
 }
 
-pub(crate) fn mutate<'a>(
+pub(crate) fn mutate(
     mut parents: [crate::Specimen; 2],
-    randomizer: &'a mut dyn RandomProvider,
+    randomizer: &mut dyn RandomProvider,
     mutation_probability: f64,
 ) -> [crate::Specimen; 2] {
     let mut uniform_randomizer = rand::thread_rng();

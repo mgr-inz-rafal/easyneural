@@ -17,6 +17,12 @@ pub struct DefaultRandomizer {
     sampler: Normal<f64>,
 }
 
+impl Default for DefaultRandomizer {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl DefaultRandomizer {
     pub fn new() -> DefaultRandomizer {
         DefaultRandomizer {

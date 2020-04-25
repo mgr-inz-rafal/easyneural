@@ -79,13 +79,6 @@ impl<'a, T: SimulatingWorld> Simulation<'a, T> {
         })
     }
 
-    pub(crate) fn is_selected_as_parent(&self, index: usize) -> bool {
-        self.parents
-            .iter()
-            .find(|&&parent| parent.0 == index)
-            .is_some()
-    }
-
     pub(crate) fn evolve_population(&mut self, parents: &[crate::Specimen; 2]) {
         self.parents.clear();
         for i in 0..self.population.len() / 2 {
@@ -147,15 +140,13 @@ impl<'a, T: SimulatingWorld> Simulation<'a, T> {
                     }
                 }
                 if let Some(best_parents) = best_parents_so_far {
-                    return Ok(best_parents);
+                    Ok(best_parents)
                 } else {
-                    return Err(
-                        "Simulation finished, but no best parents could be selected".to_string()
-                    );
+                    Err("Simulation finished, but no best parents could be selected".to_string())
                 }
             }
-            _ => return Err("Simulation end trigger not supported yet".to_string()),
-        };
+            _ => Err("Simulation end trigger not supported yet".to_string()),
+        }
     }
 
     /// Returns number of iterations used in recent learning session.
@@ -213,6 +204,12 @@ mod tests {
     };
     use crate::MINIMUM_POPULATION_SIZE;
     use if_chain::if_chain;
+
+    impl<'a, T: SimulatingWorld> Simulation<'a, T> {
+        pub(crate) fn is_selected_as_parent(&self, index: usize) -> bool {
+            self.parents.iter().any(|&parent| parent.0 == index)
+        }
+    }
 
     struct TestWorld;
     impl SimulatingWorld for TestWorld {
