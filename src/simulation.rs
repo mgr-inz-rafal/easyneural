@@ -20,7 +20,7 @@ pub struct SimulationStatus {
 
 pub struct Simulation<'a, T: SimulatingWorld> {
     pub(crate) population: Vec<Specimen>,
-    pub world: Option<T>,
+    pub(crate) world: Option<T>,
     parents: Vec<(usize, f64)>,
     randomizer: Option<&'a mut dyn RandomProvider>,
     mutation_probability: f64,
@@ -148,7 +148,7 @@ impl<'a, T: SimulatingWorld> Simulation<'a, T> {
             .push((candindate_index, self.population[candindate_index].fitness));
     }
 
-    pub fn simulate(&mut self) -> Result<[crate::Specimen; 2], String> {
+    fn simulate(&mut self) -> Result<[crate::Specimen; 2], String> {
         let mut status;
         for specimen_index in 0..self.population.len() {
             let specimen = &mut self.population[specimen_index];
