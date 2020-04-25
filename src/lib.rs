@@ -4,9 +4,9 @@ extern crate approx;
 
 use serde::Deserialize;
 
-pub mod genetic;
+mod genetic;
 pub mod network;
-pub mod neuron;
+mod neuron;
 pub mod randomizer;
 pub mod simulating_world;
 pub mod simulation;

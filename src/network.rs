@@ -31,7 +31,7 @@ impl Network {
         }
     }
 
-    pub fn get_output(&self) -> Vec<f64> {
+    pub(crate) fn get_output(&self) -> Vec<f64> {
         let last_layer = &self
             .layout
             .layers
@@ -82,7 +82,7 @@ impl Network {
     }
 
     #[allow(dead_code)]
-    pub fn fire(&mut self, input_values: &[f64]) {
+    pub(crate) fn fire(&mut self, input_values: &[f64]) {
         assert!(
             self.layout.layers.len() > 0,
             "Trying to fire network with no layers"
