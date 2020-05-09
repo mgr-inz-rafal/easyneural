@@ -2,7 +2,7 @@
 #[macro_use]
 extern crate approx;
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 mod genetic;
 pub(crate) mod network;
@@ -31,7 +31,7 @@ const MINIMUM_POPULATION_SIZE: usize = 4;
 ///
 /// This is the struct you use for transferring the
 /// neural network instances to and from the `easyneural` crate.
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Specimen {
     pub brain: network::NetworkLayout,
     pub fitness: f64,
